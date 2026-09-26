@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="24dp">
+
+        <!-- Barra superior de arrastre (BottomSheet indicator) -->
+        <View
+            android:layout_width="48dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp"
+            android:background="#E5E7EB"
+            android:layerType="software" />
+
+        <!-- Encabezado con Icono Circular Iluminado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <View
+                android:layout_width="4dp"
+                android:layout_height="32dp"
+                android:background="@color/brand_blue" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="@string/title_points_info"
+                android:textColor="@color/black"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Introducción -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="5dp"
+            android:text="@string/points_intro"
+            android:textColor="@color/gray_600"
+            android:textSize="15sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Sección: Escala de Referencia con Diseño de Badges -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_table_condition"
+            android:textColor="@color/brand_blue"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Fila 1: Nuevo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp"
+            android:padding="12dp"
+            android:background="@drawable/custon_edit"
+            android:backgroundTint="#F0FDF4">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="90dp"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:background="@drawable/custon_edit"
+                android:backgroundTint="#DCFCE7"
+                android:text="@string/condition_new_points"
+                android:textColor="#16A34A"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="@string/condition_new_desc"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Fila 2: Seminuevo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp"
+            android:padding="12dp"
+            android:background="@drawable/custon_edit"
+            android:backgroundTint="#EFF6FF">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="90dp"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:background="@drawable/custon_edit"
+                android:backgroundTint="#DBEAFE"
+                android:text="@string/condition_semi_new_points"
+                android:textColor="@color/brand_blue"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="@string/condition_semi_new_desc"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Fila 3: Usado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp"
+            android:padding="12dp"
+            android:background="@drawable/custon_edit"
+            android:backgroundTint="#F8FAFC">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="90dp"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:background="@drawable/custon_edit"
+                android:backgroundTint="#E2E8F0"
+                android:text="@string/condition_used_points"
+                android:textColor="#475569"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="@string/condition_used_desc"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Modalidad Info -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_table_modality"
+            android:textColor="@color/brand_blue"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="12dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/custon_edit"
+            android:backgroundTint="#F8FAFC"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/modality_exchange_info"
+                android:textColor="@color/slate_800"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/modality_sale_info"
+                android:textColor="@color/slate_800"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/modality_donation_info"
+                android:textColor="@color/slate_800"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <!-- Mensaje de motivación destacado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="14dp"
+            android:background="@drawable/custon_edit"
+            android:backgroundTint="#FFFBEB"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/points_motivation"
+                android:textColor="#D97706"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+
+        <!-- Botón de acción Premium -->
+        <Button
+            android:id="@+id/btnPointsClose"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:backgroundTint="@color/brand_blue"
+            android:text="@string/btn_understand"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="18dp"
+            android:elevation="2dp" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

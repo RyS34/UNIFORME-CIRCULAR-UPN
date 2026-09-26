@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="0dp">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="24dp">
+
+            <View
+                android:layout_width="36dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:background="#E5E7EB" />
+
+            <!-- CABECERA CON GESTIÓN DISCRETA -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvDetailHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="@string/title_details"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Menú Admin: Tres puntos (Overflow) -->
+                    <ImageButton
+                        android:id="@+id/btnAdminMenu"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/desc_admin_menu"
+                        android:src="@android:drawable/ic_menu_more"
+                        android:visibility="gone"
+                        app:tint="@color/amber_600" />
+
+                    <ImageButton
+                        android:id="@+id/btnCloseDetail"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_close"
+                        app:tint="@color/gray_600" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Alerta de Observación -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/layoutAdminObservationAlert"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="#FFF7ED"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        app:tint="#F59E0B" />
+                    <TextView
+                        android:id="@+id/tvAdminObservationReason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textColor="#9A3412"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Imagen -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="280dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+                <ImageView
+                    android:id="@+id/ivDetailImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:background="#F3F4F6" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Contenido Informativo -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvDetailPrendaName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/black"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDetailPoints"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_points_badge"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:textColor="@color/brand_blue"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvDetailCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="19dp"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/brand_blue"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="20dp"
+                android:background="#F3F4F6" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/label_owner_upper" android:textColor="@color/gray_400" android:textSize="11sp" android:textStyle="bold" />
+                    <TextView android:id="@+id/tvDetailOwner" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/label_status_upper" android:textColor="@color/gray_400" android:textSize="11sp" android:textStyle="bold" />
+                    <TextView android:id="@+id/tvDetailEstadoFisico" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/label_type_upper" android:textColor="@color/gray_400" android:textSize="11sp" android:textStyle="bold" />
+                    <TextView android:id="@+id/tvDetailType" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/label_description"
+                android:textColor="@color/gray_400"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDetailDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#4B5563"
+                android:textSize="15sp" />
+
+            <!-- BOTÓN PRINCIPAL ÚNICO -->
+            <Button
+                android:id="@+id/btnContact"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="32dp"
+                android:backgroundTint="@color/brand_blue"
+                android:elevation="4dp"
+                android:text="@string/btn_contact"
+                android:textAllCaps="false"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_whatsapp"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconSize="26dp"
+                app:iconTint="@null" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.cardview.widget.CardView>

@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainRegistro"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondo_gradiente"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    tools:context="com.example.uniformecircular.NuevoRegistro">
+
+    <!-- Área Superior: Logo -->
+    <LinearLayout
+        android:id="@+id/linearLayoutTop"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toTopOf="@id/linearLayoutBottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_weight="1.0">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/imgLogoRegistro"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            app:cardCornerRadius="50dp"
+            android:layout_gravity="center"
+            android:transitionName="logo_shared"
+            app:cardBackgroundColor="@color/white"
+            app:cardElevation="12dp"
+            app:strokeWidth="0dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/app_name"
+                android:padding="18dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/logo_original" />
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <!-- Área Inferior: Panel de Formulario -->
+    <LinearLayout
+        android:id="@+id/linearLayoutBottom"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/linearLayoutTop"
+        app:layout_constraintVertical_weight="4.0">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="8dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/title_register"
+                    android:textColor="@color/slate_800"
+                    android:textSize="24sp"
+                    android:fontFamily="sans-serif-black"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/subtituloRegistro"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/welcome_bonus_info"
+                    android:textColor="@color/brand_blue"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="20dp"
+                    android:gravity="center" />
+
+                <androidx.core.widget.NestedScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxHeight="380dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- Input Usuario -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/usuarioInputLayout"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:boxCornerRadiusBottomEnd="16dp"
+                            app:boxCornerRadiusBottomStart="16dp"
+                            app:boxCornerRadiusTopEnd="16dp"
+                            app:boxCornerRadiusTopStart="16dp"
+                            app:boxStrokeColor="@color/brand_blue"
+                            app:startIconDrawable="@drawable/baseline_person_24"
+                            app:startIconTint="@color/brand_blue"
+                            android:hint="@string/hint_username"
+                            app:hintTextColor="@color/brand_blue"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/usuario"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textPersonName"
+                                android:textColor="@color/slate_800"
+                                android:textSize="15sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Input Teléfono -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/phoneInputLayout"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            app:boxCornerRadiusBottomEnd="16dp"
+                            app:boxCornerRadiusBottomStart="16dp"
+                            app:boxCornerRadiusTopEnd="16dp"
+                            app:boxCornerRadiusTopStart="16dp"
+                            app:boxStrokeColor="@color/brand_blue"
+                            app:startIconDrawable="@android:drawable/ic_menu_call"
+                            app:startIconTint="@color/brand_blue"
+                            android:hint="@string/hint_phone"
+                            app:hintTextColor="@color/brand_blue"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/telefono"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="phone"
+                                android:textColor="@color/slate_800"
+                                android:textSize="15sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Input Contraseña -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/passwordInputLayout"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            app:boxCornerRadiusBottomEnd="16dp"
+                            app:boxCornerRadiusBottomStart="16dp"
+                            app:boxCornerRadiusTopEnd="16dp"
+                            app:boxCornerRadiusTopStart="16dp"
+                            app:boxStrokeColor="@color/brand_blue"
+                            app:startIconDrawable="@drawable/baseline_password_24"
+                            app:startIconTint="@color/brand_blue"
+                            app:endIconMode="password_toggle"
+                            android:hint="@string/hint_password"
+                            app:hintTextColor="@color/brand_blue"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/password"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textPassword"
+                                android:textColor="@color/slate_800"
+                                android:textSize="15sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Input Repetir Contraseña -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/repPasswordInputLayout"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            app:boxCornerRadiusBottomEnd="16dp"
+                            app:boxCornerRadiusBottomStart="16dp"
+                            app:boxCornerRadiusTopEnd="16dp"
+                            app:boxCornerRadiusTopStart="16dp"
+                            app:boxStrokeColor="@color/brand_blue"
+                            app:startIconDrawable="@drawable/baseline_password_24"
+                            app:startIconTint="@color/brand_blue"
+                            app:endIconMode="password_toggle"
+                            android:hint="@string/hint_confirm_password"
+                            app:hintTextColor="@color/brand_blue"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/rep_password"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textPassword"
+                                android:textColor="@color/slate_800"
+                                android:textSize="15sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Botón Registrar CTA -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRegistrarUsuario"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="@color/brand_blue"
+                            android:text="@string/btn_register"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="16dp"
+                            app:elevation="4dp" />
+
+                        <!-- Botón Volver secundario -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnVolverLogin"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/btn_back_to_login"
+                            android:textAllCaps="false"
+                            android:textColor="@color/brand_blue"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </androidx.core.widget.NestedScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Footer Informativo -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/login_footer_slogan"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:alpha="0.8" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

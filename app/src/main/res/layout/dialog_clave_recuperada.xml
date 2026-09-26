@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <!-- Icono animado/premium de candado seguro -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/blue_50">
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_lock"
+                app:tint="@color/brand_blue"
+                android:importantForAccessibility="no" />
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clave Recuperada"
+            android:textColor="@color/slate_800"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-black"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¡Identidad validada con éxito! Aquí está tu contraseña. Por seguridad, no la compartas."
+            android:textColor="@color/slate_600"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp" />
+
+        <!-- Campo con ojo para ver/ocultar contraseña -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilClaveRecuperada"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            android:hint="Tu Contraseña"
+            app:startIconDrawable="@drawable/baseline_password_24"
+            app:startIconTint="@color/brand_blue"
+            app:endIconMode="password_toggle"
+            app:endIconTint="@color/slate_500"
+            android:layout_marginBottom="24dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etClaveRecuperada"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:text="123456"
+                android:textColor="@color/slate_800"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:focusable="false"
+                android:clickable="false"
+                android:longClickable="false" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEntendidoClave"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="Entendido y Copiar"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="12dp"
+            android:backgroundTint="@color/brand_blue" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

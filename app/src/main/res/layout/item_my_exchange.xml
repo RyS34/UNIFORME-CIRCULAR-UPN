@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Imagen de la Prenda en miniatura redonda -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/slate_100">
+            <ImageView
+                android:id="@+id/ivExchangeImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@android:drawable/ic_menu_gallery" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Información central -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp">
+
+            <TextView
+                android:id="@+id/tvExchangeName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nombre de la Prenda"
+                android:textColor="@color/slate_800"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvExchangeCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Carrera • Talla"
+                android:textColor="@color/slate_500"
+                android:textSize="12sp" />
+
+            <!-- Badge / Etiqueta de Estado Activo -->
+            <TextView
+                android:id="@+id/tvExchangeStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_badge_available"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:text="Disponible"
+                android:textColor="@color/emerald_500"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Sección derecha: Puntos y botones de acción -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:id="@+id/tvExchangePoints"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50 Pts"
+                android:textColor="@color/brand_blue"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- Contenedor de Acciones dinámicas -->
+            <LinearLayout
+                android:id="@+id/layoutActions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnCancelProcess"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:visibility="gone"
+                    app:tint="@color/amber_600"
+                    android:contentDescription="Cancelar reserva" />
+
+                <ImageButton
+                    android:id="@+id/btnConfirmExchange"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/checkbox_on_background"
+                    android:visibility="gone"
+                    app:tint="@color/emerald_500"
+                    android:contentDescription="Confirmar entrega" />
+
+                <ImageButton
+                    android:id="@+id/btnDeleteExchange"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_delete"
+                    app:tint="@color/amber_600"
+                    android:contentDescription="Eliminar aporte" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

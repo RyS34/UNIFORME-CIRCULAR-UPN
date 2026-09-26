@@ -1,0 +1,50 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.UniformeCircular" parent="Theme.Material3.Light.NoActionBar">
+
+    </style>
+
+    <style name="Theme.UniformeCircular" parent="Base.Theme.UniformeCircular" >
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowContentTransitions">true</item>
+
+        <!-- Edge-to-Edge and Transparency -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+
+        <!-- Color de los textos de sugerencia (Hints) -->
+        <item name="android:textColorHint">@color/hint_color</item>
+    </style>
+
+    <!-- Tema específico para el Video Splash Full Screen -->
+    <style name="Theme.UniformeCircular.VideoSplash" parent="Theme.UniformeCircular">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">shortEdges</item>
+    </style>
+
+    <!-- Estilo para BottomSheet con bordes redondeados -->
+    <style name="BottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+    </style>
+
+    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <!-- Estilo para imágenes circulares perfectas -->
+    <style name="CircleImage">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="RoundedImage">
+        <item name="cornerSize">16dp</item>
+    </style>
+
+</resources>

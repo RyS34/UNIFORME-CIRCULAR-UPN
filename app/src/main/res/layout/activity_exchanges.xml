@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainExchanges"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_background"
+    tools:context=".ExchangesActivity">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewExchanges"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        app:cardBackgroundColor="@color/bg_background"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Toolbar Definitiva: Separación física de la barra de estado -->
+            <LinearLayout
+                android:id="@+id/layoutHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@color/bg_background">
+
+                <!-- Espaciador dinámico para la barra de estado (reloj, batería) -->
+                <View
+                    android:id="@+id/statusBarSpacer"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp" />
+
+                <!-- Contenedor del Título y Flecha -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:paddingHorizontal="16dp">
+
+                    <ImageButton
+                        android:id="@+id/btnBack"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/back"
+                        android:src="@drawable/ic_back_arrow"
+                        app:tint="@color/brand_blue" />
+
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:text="@string/menu_exchanges"
+                        android:textColor="@color/slate_800"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="16dp"
+                android:background="@color/slate_100" />
+
+            <!-- Tabs para alternar entre Aportes y Adquisiciones -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayoutExchanges"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/bg_background"
+                app:tabIndicatorColor="@color/brand_blue"
+                app:tabSelectedTextColor="@color/brand_blue"
+                app:tabTextColor="@color/slate_500"
+                app:tabIndicatorHeight="3dp"
+                app:tabGravity="fill"
+                app:tabMode="fixed">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mis Aportes" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mis Canjes" />
+
+            </com.google.android.material.tabs.TabLayout>
+
+            <!-- Resumen de Impacto Rápido -->
+            <LinearLayout
+                android:id="@+id/layoutSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="16dp"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_summary_contributions"
+                        android:textColor="@color/slate_500"
+                        android:textSize="12sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.1" />
+                    <TextView
+                        android:id="@+id/tvTotalContributions"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 prendas publicadas"
+                        android:textColor="@color/slate_800"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_deliver_box"
+                    app:tint="@color/emerald_500"
+                    android:alpha="0.6"
+                    android:contentDescription="@string/desc_icon_contributions" />
+            </LinearLayout>
+
+            <!-- Contenido Principal -->
+            <FrameLayout
+                android:id="@+id/layoutContent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp">
+
+                <!-- RecyclerView para los aportes del usuario -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvExchanges"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="24dp"
+                    tools:listitem="@layout/item_my_exchange" />
+
+                <!-- Estado Vacío Inteligente -->
+                <LinearLayout
+                    android:id="@+id/layoutEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/imgPlaceholder"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:alpha="0.15"
+                        android:contentDescription="@string/exchanges_empty_title"
+                        android:src="@drawable/ic_deliver_box"
+                        app:tint="@color/brand_blue" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/exchanges_empty_title"
+                        android:textColor="@color/slate_800"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="@string/exchanges_empty_desc"
+                        android:textColor="@color/slate_500"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

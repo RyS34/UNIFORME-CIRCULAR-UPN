@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainDeliver"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_background"
+    tools:context=".DeliverActivity">
+
+    <!-- Header Superior Estilizado -->
+    <LinearLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        android:elevation="4dp">
+
+        <View
+            android:id="@+id/statusBarSpacer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:paddingHorizontal="8dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/back"
+                android:src="@drawable/ic_back_arrow"
+                app:tint="@color/brand_blue" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Aportar Uniforme"
+                android:textColor="@color/slate_800"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutHeader">
+
+        <LinearLayout
+            android:id="@+id/layoutContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Subtítulo e Introducción -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Detalles del Aporte"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/slate_800" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Completa la información para que otros estudiantes puedan ver tu prenda en el catálogo circular."
+                android:textSize="13sp"
+                android:textColor="@color/slate_500"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- SECCIÓN DE FOTO PRINCIPAL -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cvFotoPrenda"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="1.5dp"
+                app:strokeColor="@color/slate_100">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- Preview de Imagen principal -->
+                    <ImageView
+                        android:id="@+id/ivPrendaPreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerInside"
+                        android:src="@android:drawable/ic_menu_camera"
+                        android:alpha="0.4"
+                        android:padding="50dp"
+                        app:tint="@color/brand_blue" />
+
+                    <!-- Degradado sutil inferior para legibilidad de botones -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="90dp"
+                        android:layout_gravity="bottom"
+                        android:background="@drawable/header_bottom_rounded"
+                        android:visibility="gone"/>
+
+                    <!-- Panel de Controles multimedia modernos flotantes -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:padding="16dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSeleccionarFoto"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="Galería"
+                            android:textAllCaps="false"
+                            android:textColor="@color/brand_blue"
+                            android:textStyle="bold"
+                            app:icon="@android:drawable/ic_menu_gallery"
+                            app:iconTint="@color/brand_blue"
+                            android:backgroundTint="@color/brand_blue_light"
+                            app:rippleColor="@color/brand_cyan"
+                            app:cornerRadius="14dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTomarFoto"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Cámara"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            app:icon="@android:drawable/ic_menu_camera"
+                            app:iconTint="@color/white"
+                            android:backgroundTint="@color/brand_blue"
+                            app:cornerRadius="14dp"/>
+                    </LinearLayout>
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- CARD CONTENEDORA DE FORMULARIO -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="1.5dp"
+                app:strokeColor="@color/slate_100"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Título Input -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Título de la Prenda"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="6dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilTitulo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:hintEnabled="false"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_marginBottom="18dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxStrokeColor="@color/brand_blue"
+                        app:boxStrokeWidthFocused="2dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTitulo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Ej. Chompa UPN Institucional"
+                            android:textSize="15sp"
+                            android:textColor="@color/slate_800"
+                            android:inputType="textCapSentences"
+                            android:paddingVertical="14dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Descripción Input -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Descripción y Estado"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="6dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilDescripcion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:hintEnabled="false"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_marginBottom="18dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxStrokeColor="@color/brand_blue"
+                        app:boxStrokeWidthFocused="2dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDescripcion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Menciona detalles (ej. 9/10, sin manchas, cierre operativo)..."
+                            android:textSize="15sp"
+                            android:textColor="@color/slate_800"
+                            android:gravity="top"
+                            android:lines="3"
+                            android:inputType="textMultiLine"
+                            android:paddingVertical="14dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Carrera / Facultad Selector -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Facultad / Carrera asociada"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        app:cardCornerRadius="14dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/bg_background"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="@color/slate_100"
+                        android:layout_marginBottom="18dp">
+                        <Spinner
+                            android:id="@+id/spCarrera"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:paddingHorizontal="12dp"
+                            android:background="@android:drawable/btn_dropdown"
+                            android:spinnerMode="dropdown" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Talla Selector Moderno -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Talla disponible"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cgTalla"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        android:layout_marginBottom="18dp">
+                        <com.google.android.material.chip.Chip android:id="@+id/chipS" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="S" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipM" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="M" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipL" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="L" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipXL" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="XL" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <!-- Género Selector Moderno -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Género"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cgGenero"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        android:layout_marginBottom="18dp">
+                        <com.google.android.material.chip.Chip android:id="@+id/chipDama" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dama" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipCaballero" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Caballero" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipUnisex" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Unisex" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <!-- Estado Físico de la Prenda -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_garment_condition"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_garment_condition"
+                        android:textSize="11sp"
+                        android:textColor="@color/slate_500"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cgEstadoFisico"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        android:layout_marginBottom="18dp">
+                        <com.google.android.material.chip.Chip android:id="@+id/chipNuevo" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/condition_new" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipSeminuevo" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/condition_semi_new" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip android:id="@+id/chipUsado" style="@style/Widget.MaterialComponents.Chip.Choice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/condition_used" android:textColor="@color/chip_text_selector" app:chipBackgroundColor="@color/chip_background_selector" app:chipStrokeColor="@color/chip_stroke_selector" app:chipStrokeWidth="1dp"/>
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <!-- Tipo de Transacción -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_transaction_type"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/slate_800"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_transaction_type"
+                        android:textSize="11sp"
+                        android:textColor="@color/slate_500"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cgTipo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        android:layout_marginBottom="16dp">
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipIntercambio"
+                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/type_exchange"
+                            android:textColor="@color/chip_text_selector"
+                            app:chipIcon="@drawable/ic_main_catalog"
+                            app:chipIconVisible="true"
+                            app:chipIconTint="@color/chip_text_selector"
+                            app:chipBackgroundColor="@color/chip_background_selector"
+                            app:chipStrokeColor="@color/chip_stroke_selector"
+                            app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipDonacion"
+                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/type_donation"
+                            android:textColor="@color/chip_text_selector"
+                            app:chipBackgroundColor="@color/chip_background_selector"
+                            app:chipStrokeColor="@color/chip_stroke_selector"
+                            app:chipStrokeWidth="1dp"/>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipVenta"
+                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/type_sale"
+                            android:textColor="@color/chip_text_selector"
+                            app:chipBackgroundColor="@color/chip_background_selector"
+                            app:chipStrokeColor="@color/chip_stroke_selector"
+                            app:chipStrokeWidth="1dp"/>
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <!-- Resumen de Puntos Dinámico -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="@drawable/custon_edit"
+                        android:backgroundTint="#F8FAFC"
+                        android:padding="12dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_points"
+                            app:tint="@color/brand_blue" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:text="Puntos a recibir:"
+                            android:textColor="@color/slate_600"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvPuntosCalculados"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 pts"
+                            android:textColor="@color/brand_blue"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Botón Publicar Principal Premium -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubirPrenda"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Publicar en Catálogo"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/brand_blue"
+                app:rippleColor="@color/white"
+                app:elevation="2dp"
+                app:cornerRadius="24dp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="30dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

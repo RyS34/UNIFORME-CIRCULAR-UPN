@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Número de columnas para tablets (ancho mínimo 600dp) -->
+    <integer name="grid_columns">3</integer>
+    <integer name="main_menu_columns">4</integer>
+</resources>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Estado Enfocado (Cuando el usuario hace clic) -->
+    <item android:state_focused="true">
+        <layer-list>
+            <!-- Capa de Sombra (Simulada) -->
+            <item android:left="2dp" android:top="2dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="30dp" />
+                    <solid android:color="@color/edit_text_shadow" />
+                </shape>
+            </item>
+            <!-- Capa Principal -->
+            <item android:bottom="2dp" android:right="2dp">
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:startColor="@color/white"
+                        android:endColor="@color/brand_blue_light"
+                        android:angle="270" />
+                    <stroke
+                        android:width="2dp"
+                        android:color="@color/brand_blue" />
+                    <corners android:radius="30dp" />
+                    <padding
+                        android:bottom="12dp"
+                        android:left="20dp"
+                        android:right="20dp"
+                        android:top="12dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+
+    <!-- Estado Normal -->
+    <item>
+        <layer-list>
+            <!-- Capa de Sombra (Más sutil) -->
+            <item android:left="1dp" android:top="1dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="30dp" />
+                    <solid android:color="#0D000000" />
+                </shape>
+            </item>
+            <!-- Capa Principal -->
+            <item android:bottom="1dp" android:right="1dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/white" />
+                    <stroke
+                        android:width="1dp"
+                        android:color="@color/edit_text_border_normal" />
+                    <corners android:radius="30dp" />
+                    <padding
+                        android:bottom="12dp"
+                        android:left="20dp"
+                        android:right="20dp"
+                        android:top="12dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+
+</selector>

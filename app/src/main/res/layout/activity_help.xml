@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainHelp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_background"
+    tools:context=".HelpActivity">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewHelp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:cardBackgroundColor="@color/bg_background"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Toolbar Definitiva: Separación física de la barra de estado -->
+            <LinearLayout
+                android:id="@+id/layoutHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@color/white">
+
+                <!-- Espaciador dinámico para la barra de estado (reloj, batería) -->
+                <View
+                    android:id="@+id/statusBarSpacer"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp" />
+
+                <!-- Contenedor del Título y Flecha -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:paddingHorizontal="16dp">
+
+                    <ImageButton
+                        android:id="@+id/btnBack"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/back"
+                        android:src="@drawable/ic_back_arrow"
+                        app:tint="@color/brand_blue" />
+
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:text="@string/menu_help"
+                        android:textColor="@color/slate_800"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE" />
+
+            <!-- Contenido Principal -->
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/layoutContent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <!-- Cabecera Ilustrada Emocional o Hero Banner -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="24dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/blue_50">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp"
+                            android:gravity="start">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/help_intro_title"
+                                android:textColor="@color/brand_blue"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/help_intro_desc"
+                                android:textColor="@color/slate_600"
+                                android:textSize="14sp"
+                                android:lineSpacingExtra="4dp" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Título de Sección FAQ -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <View
+                            android:layout_width="4dp"
+                            android:layout_height="20dp"
+                            android:background="@color/brand_blue" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:text="@string/help_faq_title"
+                            android:textColor="@color/slate_800"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- FAQ 1 -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardFaq1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/white">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:cardBackgroundColor="@color/blue_50">
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_faq_publish"
+                                        app:tint="@color/amber_600"
+                                        android:importantForAccessibility="no" />
+                                </androidx.cardview.widget.CardView>
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="12dp"
+                                    android:text="@string/help_faq_q1"
+                                    android:textColor="@color/slate_800"
+                                    android:textSize="17sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="sans-serif-medium" />
+
+                                <ImageView
+                                    android:id="@+id/ivArrow1"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_chevron_down"
+                                    app:tint="@color/slate_400"
+                                    android:importantForAccessibility="no" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAnswer1"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginStart="48dp"
+                                android:text="@string/help_faq_a1"
+                                android:textColor="@color/slate_600"
+                                android:textSize="14sp"
+                                android:lineSpacingExtra="4dp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- FAQ 2 -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardFaq2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/white">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:cardBackgroundColor="@color/emerald_50">
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_faq_points"
+                                        app:tint="@color/emerald_500"
+                                        android:importantForAccessibility="no" />
+                                </androidx.cardview.widget.CardView>
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="12dp"
+                                    android:text="@string/help_faq_q2"
+                                    android:textColor="@color/slate_800"
+                                    android:textSize="17sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="sans-serif-medium" />
+
+                                <ImageView
+                                    android:id="@+id/ivArrow2"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_chevron_down"
+                                    app:tint="@color/slate_400"
+                                    android:importantForAccessibility="no" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAnswer2"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginStart="48dp"
+                                android:text="@string/help_faq_a2"
+                                android:textColor="@color/slate_600"
+                                android:textSize="14sp"
+                                android:lineSpacingExtra="4dp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- FAQ 3 -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardFaq3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="24dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/white">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:cardBackgroundColor="@color/violet_50">
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_faq_chat"
+                                        app:tint="@color/violet_600"
+                                        android:importantForAccessibility="no" />
+                                </androidx.cardview.widget.CardView>
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="12dp"
+                                    android:text="@string/help_faq_q3"
+                                    android:textColor="@color/slate_800"
+                                    android:textSize="17sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="sans-serif-medium" />
+
+                                <ImageView
+                                    android:id="@+id/ivArrow3"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_chevron_down"
+                                    app:tint="@color/slate_400"
+                                    android:importantForAccessibility="no" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAnswer3"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginStart="48dp"
+                                android:text="@string/help_faq_a3"
+                                android:textColor="@color/slate_600"
+                                android:textSize="14sp"
+                                android:lineSpacingExtra="4dp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Card de Contacto Soporte Premium Moderno -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="4dp"
+                        app:cardBackgroundColor="@color/white">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="24dp">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="64dp"
+                                android:layout_height="64dp"
+                                android:layout_marginBottom="16dp"
+                                app:cardCornerRadius="32dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="@color/blue_50">
+                                <ImageView
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_email"
+                                    app:tint="@color/brand_blue"
+                                    android:importantForAccessibility="no" />
+                            </androidx.cardview.widget.CardView>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/help_contact_title"
+                                android:textColor="@color/slate_800"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center"
+                                android:lineSpacingExtra="2dp"
+                                android:text="@string/help_contact_desc"
+                                android:textColor="@color/slate_600"
+                                android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSupport"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/btn_contact_support"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"
+                        app:backgroundTint="@color/brand_blue"
+                        app:cornerRadius="24dp"
+                        app:rippleColor="@color/white"
+                        app:elevation="2dp" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
