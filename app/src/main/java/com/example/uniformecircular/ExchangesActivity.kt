@@ -273,21 +273,35 @@ class ExchangesActivity : AppCompatActivity() {
         // Cargar imagen de forma dinámica
         val imageUriString = prenda.imagenUri
         if (!imageUriString.isNullOrEmpty()) {
-            if (imageUriString.startsWith("http")) {
-                Glide.with(this).load(imageUriString).into(ivImage)
-            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
-                ivImage.setImageURI(Uri.parse(imageUriString))
-            } else {
-                val imageName = imageUriString.trim().lowercase()
-                val resId = when(imageName) {
-                    "chompa_upn" -> R.drawable.chompa_upn
-                    "pantalon_upn" -> R.drawable.pantalon_upn
-                    "bata_upn" -> R.drawable.bata_upn
-                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                    else -> resources.getIdentifier(imageName, "drawable", packageName)
+            when {
+                imageUriString.startsWith("base64:") -> {
+                    try {
+                        val base64String = imageUriString.substring(7)
+                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
+                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        ivImage.setImageBitmap(decodedImage)
+                    } catch (e: Exception) {
+                        ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                    }
                 }
-                if (resId != 0) ivImage.setImageResource(resId)
-                else ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                imageUriString.startsWith("http") -> {
+                    Glide.with(this).load(imageUriString).into(ivImage)
+                }
+                imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
+                    ivImage.setImageURI(Uri.parse(imageUriString))
+                }
+                else -> {
+                    val imageName = imageUriString.trim().lowercase()
+                    val resId = when(imageName) {
+                        "chompa_upn" -> R.drawable.chompa_upn
+                        "pantalon_upn" -> R.drawable.pantalon_upn
+                        "bata_upn" -> R.drawable.bata_upn
+                        "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                        else -> resources.getIdentifier(imageName, "drawable", packageName)
+                    }
+                    if (resId != 0) ivImage.setImageResource(resId)
+                    else ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                }
             }
         } else {
             ivImage.setImageResource(android.R.drawable.ic_menu_gallery)

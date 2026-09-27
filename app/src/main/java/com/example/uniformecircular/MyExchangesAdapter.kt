@@ -44,24 +44,39 @@ class MyExchangesAdapter(
         holder.tvExchangeCategory.text = context.getString(R.string.label_category_talla_genero, product.carrera, product.talla, product.genero)
         holder.tvExchangePoints.text = context.getString(R.string.label_points, product.puntos)
         
-        // Cargar imagen de forma dinámica usando Glide para mayor eficiencia
+        // Cargar imagen de forma dinámica
         val imageUriString = product.imagenUri
         if (!imageUriString.isNullOrEmpty()) {
-            if (imageUriString.startsWith("http")) {
-                Glide.with(context).load(imageUriString).into(holder.ivExchangeImage)
-            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
-                holder.ivExchangeImage.setImageURI(android.net.Uri.parse(imageUriString))
-            } else {
-                val imageName = imageUriString.trim().lowercase()
-                val resId = when(imageName) {
-                    "chompa_upn" -> R.drawable.chompa_upn
-                    "pantalon_upn" -> R.drawable.pantalon_upn
-                    "bata_upn" -> R.drawable.bata_upn
-                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                    else -> context.resources.getIdentifier(imageName, "drawable", context.packageName)
+            when {
+                imageUriString.startsWith("base64:") -> {
+                    try {
+                        val base64String = imageUriString.substring(7)
+                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
+                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        holder.ivExchangeImage.setImageBitmap(decodedImage)
+                        holder.ivExchangeImage.scaleType = ImageView.ScaleType.CENTER_CROP
+                    } catch (e: Exception) {
+                        holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                    }
                 }
-                if (resId != 0) holder.ivExchangeImage.setImageResource(resId)
-                else holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                imageUriString.startsWith("http") -> {
+                    Glide.with(context).load(imageUriString).into(holder.ivExchangeImage)
+                }
+                imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
+                    holder.ivExchangeImage.setImageURI(android.net.Uri.parse(imageUriString))
+                }
+                else -> {
+                    val imageName = imageUriString.trim().lowercase()
+                    val resId = when(imageName) {
+                        "chompa_upn" -> R.drawable.chompa_upn
+                        "pantalon_upn" -> R.drawable.pantalon_upn
+                        "bata_upn" -> R.drawable.bata_upn
+                        "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                        else -> context.resources.getIdentifier(imageName, "drawable", context.packageName)
+                    }
+                    if (resId != 0) holder.ivExchangeImage.setImageResource(resId)
+                    else holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                }
             }
         } else {
             holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
