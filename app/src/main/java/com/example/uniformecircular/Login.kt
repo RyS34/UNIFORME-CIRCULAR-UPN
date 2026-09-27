@@ -203,10 +203,17 @@ class Login : AppCompatActivity() {
                         finish()
                     } else {
                         val errorMsg = task.exception?.message ?: ""
-                        if (errorMsg.contains("user-not-found") || errorMsg.contains("invalid-credential")) {
-                            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                        // Capturar errores comunes de Firebase Auth en inglés y traducirlos de forma clara
+                        if (errorMsg.contains("user-not-found") || 
+                            errorMsg.contains("There is no user record")) {
+                            Toast.makeText(this, "El usuario ingresado no existe", Toast.LENGTH_SHORT).show()
+                        } else if (errorMsg.contains("wrong-password") || 
+                                   errorMsg.contains("invalid-credential")) {
+                            Toast.makeText(this, "Contraseña incorrecta", Toast.LENGTH_SHORT).show()
+                        } else if (errorMsg.contains("network-request-failed")) {
+                            Toast.makeText(this, "Error de red: Verifica tu conexión a internet", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(this, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -223,19 +230,20 @@ class Login : AppCompatActivity() {
             mostrarDialogoRecuperacion()
         }
     }
-
+    // Mostrar diálogo de recuperación de contraseña al presionar el texto
     private fun mostrarDialogoRecuperacion() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_recuperar_clave, null)
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .create()
 
+        // Obtener elementos del diálogo y configurar listeners
         val etUser = dialogView.findViewById<TextInputEditText>(R.id.etUserRecup)
         val tilUser = dialogView.findViewById<TextInputLayout>(R.id.tilUserRecup)
         val btnValidar = dialogView.findViewById<Button>(R.id.btnValidarRecuperacion)
         val btnCancelar = dialogView.findViewById<Button>(R.id.btnCancelarRecuperacion)
         
-        // Ocultar campo de teléfono ya que Firebase usa el correo (usuario)
+        // Ocultar campo de teléfono, ya que Firebase usa el correo (usuario)
         dialogView.findViewById<TextInputLayout>(R.id.tilPhoneRecup).visibility = View.GONE
 
         btnCancelar.setOnClickListener { dialog.dismiss() }
@@ -247,7 +255,7 @@ class Login : AppCompatActivity() {
                 tilUser.error = "Ingresa tu usuario"
                 return@setOnClickListener
             }
-
+            // Validar espacios en el usuario ingresado
             val emailFicticio = "$user@upn.pe"
             FirebaseAuth.getInstance().sendPasswordResetEmail(emailFicticio)
                 .addOnCompleteListener { task ->
@@ -255,26 +263,35 @@ class Login : AppCompatActivity() {
                         Toast.makeText(this, "Se envió un enlace de recuperación a tu correo institucional ($emailFicticio)", Toast.LENGTH_LONG).show()
                         dialog.dismiss()
                     } else {
-                        Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                        val errorMsg = task.exception?.message ?: ""
+                        if (errorMsg.contains("user-not-found") || errorMsg.contains("invalid-credential") || errorMsg.contains("There is no user record")) {
+                            Toast.makeText(this, "El usuario ingresado no existe", Toast.LENGTH_SHORT).show()
+                        } else if (errorMsg.contains("network-request-failed")) {
+                            Toast.makeText(this, "Error de red: Verifica tu conexión a internet", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "No se pudo enviar el correo de recuperación", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
         }
 
         dialog.show()
     }
-    // Restaurar datos guardados y estado de la casilla "Recordarme" para inicio automático
+    // Restaurar datos guardados y estado de la casilla "Recordarme" al volver a la pantalla
     override fun onResume() {
         super.onResume()
-       // Restaurar datos guardados y estado de la casilla "Recordarme" para inicio automático
         val sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
         val isRemembered = sharedPreferences.getBoolean("remember_me", false)
+        
         if (!isRemembered) {
             etUsuario.setText("")
         }
+        
         etPassword.setText("")
         tilUsuario.error = null
         tilPassword.error = null
-        // Colocamos el foco en el usuario
+        
+        // Enfocar el campo vacío correspondiente
         if (etUsuario.text.toString().isEmpty()) {
             etUsuario.requestFocus()
         } else {
