@@ -26,8 +26,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import com.bumptech.glide.Glide
+import androidx.core.net.toUri
 
 class ExchangesActivity : AppCompatActivity() {
 
@@ -47,7 +47,6 @@ class ExchangesActivity : AppCompatActivity() {
         // Ajustar insets para diseño Edge-to-Edge inmersivo usando el espaciador dinámico
         val rootView = findViewById<View>(R.id.mainExchanges)
         val statusBarSpacer = findViewById<View>(R.id.statusBarSpacer)
-        val recyclerView = findViewById<RecyclerView>(R.id.rvExchanges)
         val layoutContent = findViewById<View>(R.id.layoutContent)
 
         // Configurar el espaciador dinámico para el status bar
@@ -114,8 +113,8 @@ class ExchangesActivity : AppCompatActivity() {
             onDeleteClick = { prenda ->
                 confirmDelete(prenda)
             },
-            onConfirmClick = { prenda ->
-                confirmExchange(prenda)
+            onConfirmClick = { _ ->
+                confirmExchange()
             },
             onCancelClick = { prenda ->
                 cancelReservation(prenda)
@@ -128,7 +127,7 @@ class ExchangesActivity : AppCompatActivity() {
     }
 
     // Confirmamos el intercambio de una prenda mediante el escaneo de un código QR seguro
-    private fun confirmExchange(prenda: Prenda) {
+    private fun confirmExchange() {
         val options = com.journeyapps.barcodescanner.ScanOptions().apply {
             setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
             setPrompt(getString(R.string.qr_scan_prompt))
@@ -262,7 +261,7 @@ class ExchangesActivity : AppCompatActivity() {
                     firestore.runTransaction { transaction ->
                         // LEER AMBOS DOCUMENTOS PRIMERO (Obligatorio en transacciones)
                         val userDoc = transaction.get(userRef)
-                        val prendaDoc = transaction.get(prendaRef)
+                        transaction.get(prendaRef)
                         
                         val puntosActuales = userDoc.getLong("puntos") ?: 0
                         
@@ -399,11 +398,10 @@ class ExchangesActivity : AppCompatActivity() {
                     Glide.with(this).load(imageUriString).into(ivImage)
                 }
                 imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
-                    ivImage.setImageURI(Uri.parse(imageUriString))
+                    ivImage.setImageURI(imageUriString.toUri())
                 }
                 else -> {
-                    val imageName = imageUriString.trim().lowercase()
-                    val resId = when(imageName) {
+                    val resId = when(val imageName = imageUriString.trim().lowercase()) {
                         "chompa_upn" -> R.drawable.chompa_upn
                         "pantalon_upn" -> R.drawable.pantalon_upn
                         "bata_upn" -> R.drawable.bata_upn
@@ -422,11 +420,13 @@ class ExchangesActivity : AppCompatActivity() {
         dialog.setContentView(view)
         
         // Configurar el comportamiento del BottomSheet para que se expanda por completo al abrirse
-        val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        bottomSheet?.let {
-            val behavior = BottomSheetBehavior.from(it)
-            behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            behavior.skipCollapsed = true // Evita que se quede a la mitad al arrastrar hacia abajo
+        view.post {
+            val parent = view.parent as? View
+            parent?.let {
+                val behavior = BottomSheetBehavior.from(it)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+            }
         }
 
         dialog.show()
@@ -530,13 +530,6 @@ class ExchangesActivity : AppCompatActivity() {
         }
     }
 
-    private fun corregirPrendaDirectamente(idPrenda: String) {
-        FirebaseFirestore.getInstance().collection("prendas").document(idPrenda)
-            .update("estadoPublicacion", "DISPONIBLE")
-            .addOnSuccessListener {
-                Toast.makeText(this, "Publicación corregida y enviada para revisión", Toast.LENGTH_SHORT).show()
-                loadData()
-            }
-    }
 }
+
 

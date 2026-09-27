@@ -83,7 +83,7 @@
             android:name=".AccountActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-p'
+
         <!-- Configuración para el escáner QR en modo vertical -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"

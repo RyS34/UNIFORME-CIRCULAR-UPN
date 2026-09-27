@@ -1,6 +1,8 @@
 package com.example.uniformecircular
 
+import android.Manifest
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -55,6 +57,15 @@ class DeliverActivity : AppCompatActivity() {
             cameraImageUri?.let { actualizarPreview(it) }
         }
     }
+
+    // Launcher para solicitar permiso de cámara
+    private val requestCameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            prepararCamara()
+        } else {
+            Toast.makeText(this, "Se requiere permiso de cámara para tomar fotos", Toast.LENGTH_SHORT).show()
+        }
+    }
     // Actualiza la vista previa de la imagen seleccionada
     private fun actualizarPreview(uri: Uri) {
         selectedImageUri = uri
@@ -91,7 +102,7 @@ class DeliverActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnTomarFoto).setOnClickListener {
-            prepararCamara()
+            checkCameraPermissionAndLaunch()
         }
 
         findViewById<Button>(R.id.btnSubirPrenda).setOnClickListener {
@@ -260,23 +271,34 @@ class DeliverActivity : AppCompatActivity() {
         
         fullImageDialog.show()
     }
+    // Verifica permisos y lanza la cámara
+    private fun checkCameraPermissionAndLaunch() {
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
+                prepararCamara()
+            }
+            else -> {
+                requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
     // Prepara la cámara para capturar una foto nueva y la muestra en la vista previa
     private fun prepararCamara() {
         try {
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            // Usar cacheDir es más seguro y ya está mapeado en file_paths.xml como my_cache_images
+            val storageDir = cacheDir
             val imageFile = File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
             
-            val uri = FileProvider.getUriForFile(
-                this,
-                "${packageName}.fileprovider",
-                imageFile
-            )
+            val authority = "${applicationContext.packageName}.fileprovider"
+            val uri = FileProvider.getUriForFile(this, authority, imageFile)
+            
             cameraImageUri = uri
             takePictureLauncher.launch(uri)
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Error al preparar la cámara", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Error al preparar la cámara: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
     // Configura los insets para el diseño Edge-to-Edge en una actividad de entrega
