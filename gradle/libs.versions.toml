@@ -12,6 +12,7 @@ constraintlayout = "2.1.4"
 splashscreen = "1.0.1"
 firebaseBom = "33.10.0"
 googleServicesPlugin = "4.4.2"
+zxingAndroidEmbedded = "4.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,6 +30,7 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version = "4.16.0" }
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -4,6 +4,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <queries>
         <package android:name="com.whatsapp" />
@@ -80,6 +83,13 @@
             android:name=".AccountActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+p'
+        <!-- Configuración para el escáner QR en modo vertical -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            tools:replace="android:screenOrientation"
+            android:stateNotNeeded="true" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

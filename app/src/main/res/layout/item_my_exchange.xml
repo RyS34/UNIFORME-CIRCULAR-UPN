@@ -100,6 +100,17 @@
                 android:layout_marginTop="8dp">
 
                 <ImageButton
+                    android:id="@+id/btnShowQR"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_crop"
+                    android:visibility="gone"
+                    app:tint="@color/brand_blue"
+                    android:contentDescription="@string/content_desc_show_qr" />
+
+                <ImageButton
                     android:id="@+id/btnCancelProcess"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
@@ -107,7 +118,7 @@
                     android:src="@android:drawable/ic_menu_close_clear_cancel"
                     android:visibility="gone"
                     app:tint="@color/amber_600"
-                    android:contentDescription="Cancelar reserva" />
+                    android:contentDescription="@string/content_desc_cancel_reservation" />
 
                 <ImageButton
                     android:id="@+id/btnConfirmExchange"
@@ -118,7 +129,7 @@
                     android:src="@android:drawable/checkbox_on_background"
                     android:visibility="gone"
                     app:tint="@color/emerald_500"
-                    android:contentDescription="Confirmar entrega" />
+                    android:contentDescription="@string/content_desc_confirm_delivery" />
 
                 <ImageButton
                     android:id="@+id/btnDeleteExchange"
@@ -127,7 +138,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_menu_delete"
                     app:tint="@color/amber_600"
-                    android:contentDescription="Eliminar aporte" />
+                    android:contentDescription="@string/content_desc_delete_contribution" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

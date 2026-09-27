@@ -119,48 +119,137 @@ class ExchangesActivity : AppCompatActivity() {
             },
             onCancelClick = { prenda ->
                 cancelReservation(prenda)
+            },
+            onShowQRClick = { prenda ->
+                showExchangeQR(prenda)
             }
         )
         recyclerView.adapter = adapter
     }
 
-    // Confirmamos el intercambio de una prenda
+    // Confirmamos el intercambio de una prenda mediante el escaneo de un código QR seguro
     private fun confirmExchange(prenda: Prenda) {
-        AlertDialog.Builder(this)
-            .setTitle("Confirmar Entrega")
-            .setMessage("¿Confirmas que ya entregaste la prenda '${prenda.titulo}'? Esto cerrará el ciclo y otorgará los puntos.")
-            .setPositiveButton("Sí, entregada") { _, _ ->
+        val options = com.journeyapps.barcodescanner.ScanOptions().apply {
+            setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
+            setPrompt(getString(R.string.qr_scan_prompt))
+            setCameraId(0) // Usar cámara trasera
+            setBeepEnabled(true)
+            setBarcodeImageEnabled(false)
+            setOrientationLocked(true)
+        }
+        qrScannerLauncher.launch(options)
+    }
+
+    // Registrador del resultado del escaneo QR
+    private val qrScannerLauncher = registerForActivityResult(com.journeyapps.barcodescanner.ScanContract()) { result ->
+        if (result.contents != null) {
+            val datos = result.contents.split("|")
+            if (datos.size >= 2) {
+                val prendaIdEscaneado = datos[0]
+                val receptorIdEscaneado = datos[1]
+
                 val firestore = FirebaseFirestore.getInstance()
-                
-                // Marcar como canjeada
-                firestore.collection("prendas").document(prenda.id)
-                    .update("estadoPublicacion", "CANJEADO")
-                    .addOnSuccessListener {
-                        // El dueño de la prenda recibe los puntos correspondientes
-                        firestore.collection("usuarios").document(prenda.idUsuario).get()
-                            .addOnSuccessListener { doc ->
-                                val puntosActuales = doc.getLong("puntos") ?: 0
-                                doc.reference.update("puntos", puntosActuales + prenda.puntos)
-                                Toast.makeText(this, "¡Canje completado exitosamente! Has ganado ${prenda.puntos} puntos.", Toast.LENGTH_SHORT).show()
-                                loadData()
+                firestore.collection("prendas").document(prendaIdEscaneado).get()
+                    .addOnSuccessListener { doc ->
+                        if (doc.exists()) {
+                            val vendedorId = doc.getString("vendedorId") ?: ""
+                            val receptorIdActual = doc.getString("receptorId") ?: ""
+                            val estadoPublicacion = doc.getString("estadoPublicacion") ?: ""
+                            val puntosPrenda = doc.getLong("puntos")?.toInt() ?: 0
+
+                            if (vendedorId != currentUserId) {
+                                Toast.makeText(this, getString(R.string.qr_error_not_owner), Toast.LENGTH_LONG).show()
+                                return@addOnSuccessListener
                             }
+
+                            if (receptorIdActual != receptorIdEscaneado) {
+                                Toast.makeText(this, getString(R.string.qr_error_wrong_user), Toast.LENGTH_LONG).show()
+                                return@addOnSuccessListener
+                            }
+
+                            if (estadoPublicacion == "CANJEADO") {
+                                Toast.makeText(this, getString(R.string.qr_error_already_exchanged), Toast.LENGTH_SHORT).show()
+                                return@addOnSuccessListener
+                            }
+
+                            // Si todo es correcto, realizamos la entrega de manera atómica
+                            firestore.runTransaction { transaction ->
+                                val userRef = firestore.collection("usuarios").document(vendedorId)
+                                val userDoc = transaction.get(userRef)
+                                val puntosActuales = userDoc.getLong("puntos") ?: 0
+
+                                transaction.update(doc.reference, "estadoPublicacion", "CANJEADO")
+                                transaction.update(userRef, "puntos", puntosActuales + puntosPrenda)
+                                null
+                            }.addOnSuccessListener {
+                                AlertDialog.Builder(this)
+                                    .setTitle(getString(R.string.qr_success_title))
+                                    .setMessage(getString(R.string.qr_success_delivery, puntosPrenda))
+                                    .setPositiveButton(getString(R.string.btn_understand)) { dialog, _ ->
+                                        dialog.dismiss()
+                                        loadData()
+                                    }
+                                    .setCancelable(false)
+                                    .show()
+                            }.addOnFailureListener { e ->
+                                Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(this, getString(R.string.qr_error_not_exists), Toast.LENGTH_SHORT).show()
+                        }
                     }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            } else {
+                Toast.makeText(this, getString(R.string.qr_error_invalid), Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Aún no", null)
-            .show()
+        } else {
+            Toast.makeText(this, getString(R.string.qr_scan_cancelled), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Genera y muestra un código QR único para que el comprador valide su canje
+    private fun showExchangeQR(prenda: Prenda) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_show_qr, null)
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        val ivQrCode = dialogView.findViewById<ImageView>(R.id.ivQrCodeGenerated)
+        val tvQrTitle = dialogView.findViewById<TextView>(R.id.tvQrTitle)
+        val tvQrDesc = dialogView.findViewById<TextView>(R.id.tvQrDescription)
+        val btnCloseQr = dialogView.findViewById<Button>(R.id.btnCloseQrDialog)
+
+        tvQrTitle.text = prenda.titulo
+        tvQrDesc.text = getString(R.string.qr_dialog_desc)
+
+        // Contenido del QR: ID de Prenda y ID de Receptor separados por un pipe |
+        val qrContent = "${prenda.id}|${currentUserId}"
+
+        try {
+            val barcodeEncoder = com.journeyapps.barcodescanner.BarcodeEncoder()
+            val bitmap = barcodeEncoder.encodeBitmap(qrContent, com.google.zxing.BarcodeFormat.QR_CODE, 512, 512)
+            ivQrCode.setImageBitmap(bitmap)
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.qr_gen_error, e.message), Toast.LENGTH_SHORT).show()
+        }
+
+        btnCloseQr.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
     // Cancelamos la reserva de una prenda y devolvemos los puntos al receptor
     private fun cancelReservation(prenda: Prenda) {
         val isOwner = prenda.idUsuario == currentUserId
-        val title = if (isOwner) "Liberar Prenda" else "Cancelar Interés"
+        val title = if (isOwner) getString(R.string.cancel_title_owner) else getString(R.string.cancel_title_receptor)
         val message = if (isOwner) 
-            "¿Deseas cancelar el interés de este estudiante? La prenda volverá a estar disponible para todos."
-            else "¿Deseas cancelar tu reserva? Se te devolverán los ${prenda.puntos} puntos."
+            getString(R.string.cancel_msg_owner)
+            else getString(R.string.cancel_msg_receptor, prenda.puntos)
 
         AlertDialog.Builder(this)
             .setTitle(title)
             .setMessage(message)
-            .setPositiveButton("Sí, cancelar") { _, _ ->
+            .setPositiveButton(getString(R.string.cancel_btn_positive)) { _, _ ->
                 val firestore = FirebaseFirestore.getInstance()
                 
                 // Usamos una transacción para asegurar que la devolución de puntos sea atómica
@@ -171,9 +260,13 @@ class ExchangesActivity : AppCompatActivity() {
                     val userRef = firestore.collection("usuarios").document(receptorId)
                     
                     firestore.runTransaction { transaction ->
+                        // LEER AMBOS DOCUMENTOS PRIMERO (Obligatorio en transacciones)
                         val userDoc = transaction.get(userRef)
+                        val prendaDoc = transaction.get(prendaRef)
+                        
                         val puntosActuales = userDoc.getLong("puntos") ?: 0
                         
+                        // ACTUALIZAR
                         transaction.update(prendaRef, mapOf(
                             "estadoPublicacion" to "DISPONIBLE",
                             "receptorId" to null
@@ -181,7 +274,7 @@ class ExchangesActivity : AppCompatActivity() {
                         transaction.update(userRef, "puntos", puntosActuales + prenda.puntos)
                         null
                     }.addOnSuccessListener {
-                        Toast.makeText(this, "Reserva cancelada y puntos devueltos", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.cancel_success), Toast.LENGTH_SHORT).show()
                         loadData()
                     }.addOnFailureListener { e ->
                         Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -196,7 +289,7 @@ class ExchangesActivity : AppCompatActivity() {
                     }
                 }
             }
-            .setNegativeButton("No", null)
+            .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()
     }
     //Se muestra el detalle de la prenda en un BottomSheetDialog
@@ -343,9 +436,9 @@ class ExchangesActivity : AppCompatActivity() {
         if (currentTab == 1) return
 
         AlertDialog.Builder(this)
-            .setTitle("Eliminar Aporte")
-            .setMessage("¿Estás seguro de que deseas eliminar esta prenda? Se quitará del catálogo público.")
-            .setPositiveButton("Eliminar") { _, _ ->
+            .setTitle(getString(R.string.delete_title))
+            .setMessage(getString(R.string.delete_msg))
+            .setPositiveButton(getString(R.string.delete_btn_positive)) { _, _ ->
                 val firestore = FirebaseFirestore.getInstance()
                 
                 // Si la prenda estaba reservada (EN PROCESO), devolvemos los puntos al receptor
@@ -362,14 +455,14 @@ class ExchangesActivity : AppCompatActivity() {
                 firestore.collection("prendas").document(prenda.id).delete()
                     .addOnSuccessListener {
                         val msg = if (prenda.estado == "EN PROCESO") 
-                            "Prenda eliminada y puntos devueltos al interesado" 
-                        else "Prenda eliminada correctamente"
+                            getString(R.string.delete_success_refund)
+                        else getString(R.string.delete_success)
                         
                         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                         loadData()
                     }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()
     }
     // Cargamos los datos desde Firestore y los mostramos en el RecyclerView

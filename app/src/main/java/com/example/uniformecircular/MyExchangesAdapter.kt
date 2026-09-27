@@ -16,7 +16,8 @@ class MyExchangesAdapter(
     private val onItemClick: (Prenda) -> Unit,
     private val onDeleteClick: (Prenda) -> Unit,
     private val onConfirmClick: (Prenda) -> Unit,
-    private val onCancelClick: (Prenda) -> Unit
+    private val onCancelClick: (Prenda) -> Unit,
+    private val onShowQRClick: (Prenda) -> Unit
 ) : RecyclerView.Adapter<MyExchangesAdapter.MyViewHolder>() {
 
     class MyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -28,6 +29,7 @@ class MyExchangesAdapter(
         val btnDeleteExchange: ImageButton = view.findViewById(R.id.btnDeleteExchange)
         val btnConfirmExchange: ImageButton = view.findViewById(R.id.btnConfirmExchange)
         val btnCancelProcess: ImageButton = view.findViewById(R.id.btnCancelProcess)
+        val btnShowQR: ImageButton = view.findViewById(R.id.btnShowQR)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
@@ -90,6 +92,7 @@ class MyExchangesAdapter(
         holder.btnDeleteExchange.visibility = View.GONE
         holder.btnConfirmExchange.visibility = View.GONE
         holder.btnCancelProcess.visibility = View.GONE
+        holder.btnShowQR.visibility = View.GONE
         holder.itemView.alpha = 1.0f
         // Configurar colores y visibilidad según el estado de la prenda
         when (status) {
@@ -108,9 +111,10 @@ class MyExchangesAdapter(
                     holder.btnCancelProcess.visibility = View.VISIBLE
                 }
                 
-                // El RECEPTOR (quien reservó) también puede cancelar su interés
+                // El RECEPTOR (quien reservó) también puede cancelar su interés o mostrar su QR
                 if (product.idReceptor == currentUserId) {
                     holder.btnCancelProcess.visibility = View.VISIBLE
+                    holder.btnShowQR.visibility = View.VISIBLE
                 }
             }
             "OBSERVADA" -> {
@@ -137,6 +141,7 @@ class MyExchangesAdapter(
         holder.btnDeleteExchange.setOnClickListener { onDeleteClick(product) }
         holder.btnConfirmExchange.setOnClickListener { onConfirmClick(product) }
         holder.btnCancelProcess.setOnClickListener { onCancelClick(product) }
+        holder.btnShowQR.setOnClickListener { onShowQRClick(product) }
     }
     // Tamaño de la lista de intercambios en el RecyclerView
     override fun getItemCount(): Int = productList.size

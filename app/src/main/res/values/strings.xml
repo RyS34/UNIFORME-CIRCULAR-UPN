@@ -156,4 +156,36 @@
     <string name="content_desc_warning_icon">Icono de advertencia</string>
     <string name="content_desc_delete_icon">Icono de eliminar</string>
     <string name="btn_correct_publication">Corregir Publicación</string>
+    <string name="content_desc_show_qr">Mostrar QR de validación</string>
+    <string name="content_desc_cancel_reservation">Cancelar reserva</string>
+    <string name="content_desc_confirm_delivery">Confirmar entrega</string>
+    <string name="content_desc_delete_contribution">Eliminar aporte</string>
+
+    <!-- QR and Validation Strings -->
+    <string name="qr_scan_prompt">Escanea el código QR del comprador para validar la entrega segura</string>
+    <string name="qr_error_not_owner">Error: No eres el dueño de esta prenda</string>
+    <string name="qr_error_wrong_user">Error: El código QR no pertenece al estudiante que reservó esta prenda</string>
+    <string name="qr_error_already_exchanged">Esta prenda ya fue entregada anteriormente</string>
+    <string name="qr_success_delivery">¡Entrega validada con éxito! Has ganado %1$d puntos.</string>
+    <string name="qr_success_title">¡Canje Exitoso!</string>
+    <string name="qr_error_not_exists">La prenda escaneada no existe</string>
+    <string name="qr_error_invalid">Código QR inválido o no reconocido</string>
+    <string name="qr_scan_cancelled">Escaneo cancelado</string>
+    <string name="qr_dialog_desc">Muéstrale este código QR al dueño de la prenda cuando te la entregue en persona para completar la transacción.</string>
+    <string name="qr_gen_error">Error al generar código QR: %1$s</string>
+
+    <!-- Cancellation Strings -->
+    <string name="cancel_title_owner">Liberar Prenda</string>
+    <string name="cancel_title_receptor">Cancelar Interés</string>
+    <string name="cancel_msg_owner">¿Deseas cancelar el interés de este estudiante? La prenda volverá a estar disponible para todos.</string>
+    <string name="cancel_msg_receptor">¿Deseas cancelar tu reserva? Se te devolverán los %1$d puntos.</string>
+    <string name="cancel_btn_positive">Sí, cancelar</string>
+    <string name="cancel_success">Reserva cancelada y puntos devueltos</string>
+
+    <!-- Deletion Strings -->
+    <string name="delete_title">Eliminar Aporte</string>
+    <string name="delete_msg">¿Estás seguro de que deseas eliminar esta prenda? Se quitará del catálogo público.</string>
+    <string name="delete_btn_positive">Eliminar</string>
+    <string name="delete_success">Prenda eliminada correctamente</string>
+    <string name="delete_success_refund">Prenda eliminada y puntos devueltos al interesado</string>
 </resources>

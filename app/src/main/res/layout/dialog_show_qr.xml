@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_horizontal"
+    android:background="@android:color/white">
+
+    <TextView
+        android:id="@+id/tvQrTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Validar Entrega"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvQrDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/qr_dialog_desc"
+        android:textColor="#555555"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <ImageView
+        android:id="@+id/ivQrCodeGenerated"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/content_desc_show_qr"/>
+
+    <Button
+        android:id="@+id/btnCloseQrDialog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_close"
+        android:backgroundTint="#003366"
+        android:textColor="@android:color/white"
+        style="@style/Widget.MaterialComponents.Button"/>
+
+</LinearLayout>
