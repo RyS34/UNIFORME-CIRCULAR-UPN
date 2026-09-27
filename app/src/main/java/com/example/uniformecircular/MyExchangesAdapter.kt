@@ -102,9 +102,14 @@ class MyExchangesAdapter(
                 holder.tvExchangeStatus.setTextColor(context.getColor(R.color.amber_600))
                 holder.tvExchangeStatus.setBackgroundResource(R.drawable.bg_badge_in_progress)
                 
-                // Solo el DUEÑO de la prenda puede confirmar o cancelar el proceso
+                // El DUEÑO puede confirmar entrega o liberar la prenda
                 if (product.idUsuario == currentUserId) {
                     holder.btnConfirmExchange.visibility = View.VISIBLE
+                    holder.btnCancelProcess.visibility = View.VISIBLE
+                }
+                
+                // El RECEPTOR (quien reservó) también puede cancelar su interés
+                if (product.idReceptor == currentUserId) {
                     holder.btnCancelProcess.visibility = View.VISIBLE
                 }
             }

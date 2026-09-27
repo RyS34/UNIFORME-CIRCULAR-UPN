@@ -6,14 +6,6 @@
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
-              <option name="connection">
-                <ConnectionSetting>
-                  <option name="appId" value="com.example.uniformecircular" />
-                  <option name="mobileSdkAppId" value="1:365907922775:android:30b3995c17a5dc5c93f812" />
-                  <option name="projectId" value="uniforme-circular-upn" />
-                  <option name="projectNumber" value="365907922775" />
-                </ConnectionSetting>
-              </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />

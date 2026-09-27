@@ -149,36 +149,54 @@ class ExchangesActivity : AppCompatActivity() {
             .setNegativeButton("Aún no", null)
             .show()
     }
-    // Cancelamos la reserva de una prenda y devolvemos los puntos al dueño
+    // Cancelamos la reserva de una prenda y devolvemos los puntos al receptor
     private fun cancelReservation(prenda: Prenda) {
+        val isOwner = prenda.idUsuario == currentUserId
+        val title = if (isOwner) "Liberar Prenda" else "Cancelar Interés"
+        val message = if (isOwner) 
+            "¿Deseas cancelar el interés de este estudiante? La prenda volverá a estar disponible para todos."
+            else "¿Deseas cancelar tu reserva? Se te devolverán los ${prenda.puntos} puntos."
+
         AlertDialog.Builder(this)
-            .setTitle("Cancelar Reserva")
-            .setMessage("¿Deseas cancelar el interés de este estudiante? La prenda volverá a estar disponible para todos en el catálogo.")
-            .setPositiveButton("Sí, liberar") { _, _ ->
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Sí, cancelar") { _, _ ->
                 val firestore = FirebaseFirestore.getInstance()
                 
-                firestore.collection("prendas").document(prenda.id)
-                    .update(mapOf(
+                // Usamos una transacción para asegurar que la devolución de puntos sea atómica
+                val prendaRef = firestore.collection("prendas").document(prenda.id)
+                val receptorId = prenda.idReceptor
+
+                if (receptorId != null) {
+                    val userRef = firestore.collection("usuarios").document(receptorId)
+                    
+                    firestore.runTransaction { transaction ->
+                        val userDoc = transaction.get(userRef)
+                        val puntosActuales = userDoc.getLong("puntos") ?: 0
+                        
+                        transaction.update(prendaRef, mapOf(
+                            "estadoPublicacion" to "DISPONIBLE",
+                            "receptorId" to null
+                        ))
+                        transaction.update(userRef, "puntos", puntosActuales + prenda.puntos)
+                        null
+                    }.addOnSuccessListener {
+                        Toast.makeText(this, "Reserva cancelada y puntos devueltos", Toast.LENGTH_SHORT).show()
+                        loadData()
+                    }.addOnFailureListener { e ->
+                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // Fallback si no hay receptor por alguna razón
+                    prendaRef.update(mapOf(
                         "estadoPublicacion" to "DISPONIBLE",
                         "receptorId" to null
-                    ))
-                    .addOnSuccessListener {
-                        // Devolver puntos al receptor si existía uno
-                        prenda.idReceptor?.let { receptorId ->
-                            firestore.collection("usuarios").document(receptorId).get()
-                                .addOnSuccessListener { doc ->
-                                    val puntosActuales = doc.getLong("puntos") ?: 0
-                                    doc.reference.update("puntos", puntosActuales + prenda.puntos)
-                                    Toast.makeText(this, "Prenda liberada y puntos devueltos al interesado", Toast.LENGTH_SHORT).show()
-                                    loadData()
-                                }
-                        } ?: run {
-                            Toast.makeText(this, "Prenda liberada", Toast.LENGTH_SHORT).show()
-                            loadData()
-                        }
+                    )).addOnSuccessListener {
+                        loadData()
                     }
+                }
             }
-            .setNegativeButton("Mantener reserva", null)
+            .setNegativeButton("No", null)
             .show()
     }
     //Se muestra el detalle de la prenda en un BottomSheetDialog

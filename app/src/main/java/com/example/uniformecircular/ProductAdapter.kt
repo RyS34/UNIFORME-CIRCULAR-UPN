@@ -95,6 +95,7 @@ class ProductAdapter(
     // Obtener el número total de elementos en la lista de productos
     override fun getItemCount(): Int = productList.size
 
+    // Actualizar la lista de productos y notificar cambios en el adaptador
     fun updateList(newList: List<Prenda>) {
         productList = newList
         notifyDataSetChanged()

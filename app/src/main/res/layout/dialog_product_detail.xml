@@ -198,7 +198,7 @@
                 android:textSize="15sp" />
 
             <!-- BOTÓN PRINCIPAL ÚNICO -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnContact"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"

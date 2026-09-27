@@ -29,6 +29,12 @@ import java.util.Locale
 
 import com.bumptech.glide.Glide
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
+import java.io.InputStream
+
 class DeliverActivity : AppCompatActivity() {
     
     private var currentUserId: String? = null
@@ -135,17 +141,55 @@ class DeliverActivity : AppCompatActivity() {
                     val imagenUrl = doc.getString("urlImagen")
                     if (!imagenUrl.isNullOrEmpty()) {
                         val ivPreview = findViewById<ImageView>(R.id.ivPrendaPreview)
-                        Glide.with(this@DeliverActivity)
-                            .load(imagenUrl)
-                            .centerCrop()
-                            .into(ivPreview)
+                        
+                        if (imagenUrl.startsWith("base64:")) {
+                            try {
+                                val base64String = imagenUrl.substring(7)
+                                val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
+                                val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                ivPreview.setImageBitmap(decodedImage)
+                                ivPreview.scaleType = ImageView.ScaleType.CENTER_CROP
+                                ivPreview.post { ivPreview.drawable?.setTintList(null) }
+                            } catch (e: Exception) {
+                                ivPreview.setImageResource(android.R.drawable.ic_menu_gallery)
+                            }
+                        } else {
+                            Glide.with(this@DeliverActivity)
+                                .load(imagenUrl)
+                                .centerCrop()
+                                .into(ivPreview)
+                            ivPreview.post { ivPreview.drawable?.setTintList(null) }
+                        }
                         
                         // Guardamos la URI para que la validación sepa que ya hay una imagen
                         selectedImageUri = android.net.Uri.parse(imagenUrl)
                     }
+                    
+                    // Cargar Chips
+                    val talla = doc.getString("talla")
+                    val genero = doc.getString("genero")
+                    val tipo = doc.getString("tipo")
+                    val estadoFisico = doc.getString("estadoFisico")
+
+                    seleccionarChipPorTexto(findViewById(R.id.cgTalla), talla)
+                    seleccionarChipPorTexto(findViewById(R.id.cgGenero), genero)
+                    seleccionarChipPorTexto(findViewById(R.id.cgTipo), tipo)
+                    seleccionarChipPorTexto(findViewById(R.id.cgEstadoFisico), estadoFisico)
+
                     actualizarResumenPuntos()
                 }
             }
+    }
+
+    private fun seleccionarChipPorTexto(group: ChipGroup, texto: String?) {
+        if (texto == null) return
+        for (i in 0 until group.childCount) {
+            val chip = group.getChildAt(i) as? Chip
+            if (chip?.text?.toString().equals(texto, ignoreCase = true)) {
+                chip?.isChecked = true
+                break
+            }
+        }
     }
     // Actualiza el resumen de puntos en tiempo real al cambiar el estado físico o la modalidad
     private fun setupPointsListeners() {
@@ -164,13 +208,14 @@ class DeliverActivity : AppCompatActivity() {
         val selectedTipoId = findViewById<ChipGroup>(R.id.cgTipo).checkedChipId
         val tvPuntos = findViewById<TextView>(R.id.tvPuntosCalculados)
 
+        // Calculamos los puntos según el estado físico seleccionados (nuevo, seminuevo, usado)
         val puntosBaseCondicion = when (selectedEstadoId) {
             R.id.chipNuevo -> 20
             R.id.chipSeminuevo -> 10
             R.id.chipUsado -> 0
             else -> 0
         }
-
+        // Calculamos los puntos según la modalidad seleccionada (intercambio, venta, donación)
         val puntosBaseModalidad = when (selectedTipoId) {
             R.id.chipIntercambio -> 50
             R.id.chipVenta -> 30
@@ -185,7 +230,7 @@ class DeliverActivity : AppCompatActivity() {
         } else {
             puntosBaseModalidad + puntosBaseCondicion
         }
-
+        // Actualizamos el resumen de puntos en tiempo real
         tvPuntos.text = "$puntosCalculados pts"
     }
     // Muestra la imagen de la prenda a pantalla completa
@@ -197,7 +242,20 @@ class DeliverActivity : AppCompatActivity() {
         val ivFull = fullImageDialog.findViewById<ImageView>(R.id.ivFullImage)
         val btnClose = fullImageDialog.findViewById<ImageButton>(R.id.btnCloseFullImage)
         
-        ivFull.setImageURI(uri)
+        val uriString = uri.toString()
+        if (uriString.startsWith("base64:")) {
+            try {
+                val base64String = uriString.substring(7)
+                val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
+                val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                ivFull.setImageBitmap(decodedImage)
+            } catch (e: Exception) {
+                ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
+        } else {
+            ivFull.setImageURI(uri)
+        }
+
         btnClose.setOnClickListener { fullImageDialog.dismiss() }
         
         fullImageDialog.show()
@@ -326,14 +384,34 @@ class DeliverActivity : AppCompatActivity() {
         btnSubir.isEnabled = false
         btnSubir.text = "Subiendo..."
 
-        // Convertimos la imagen seleccionada a Base64 comprimido
+        // Convertimos la imagen seleccionada a Base64 comprimido y corregimos orientación
         val imagenBase64 = selectedImageUri?.let { uri ->
+            val uriString = uri.toString()
+            if (uriString.startsWith("base64:")) {
+                return@let uriString
+            }
+
             try {
-                val inputStream = contentResolver.openInputStream(uri)
-                val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                val inputStream: InputStream? = contentResolver.openInputStream(uri)
+                val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                
+                // Corregir la orientación EXIF
+                val exifInputStream = contentResolver.openInputStream(uri)
+                val exif = exifInputStream?.let { ExifInterface(it) }
+                val orientation = exif?.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                
+                val matrix = Matrix()
+                when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                    ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                    ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                }
+                
+                val correctedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
+                
                 val outputStream = java.io.ByteArrayOutputStream()
                 // Comprimimos al 40% para que quepa en Firestore y no use mucha red
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 40, outputStream)
+                correctedBitmap.compress(Bitmap.CompressFormat.JPEG, 40, outputStream)
                 val byteArray = outputStream.toByteArray()
                 "base64:" + android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
             } catch (e: Exception) {

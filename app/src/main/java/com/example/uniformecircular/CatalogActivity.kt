@@ -12,6 +12,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.button.MaterialButton
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -177,7 +178,7 @@ class CatalogActivity : AppCompatActivity() {
         val tvType = view.findViewById<TextView>(R.id.tvDetailType)
         val tvEstadoFisico = view.findViewById<TextView>(R.id.tvDetailEstadoFisico)
         val tvDescription = view.findViewById<TextView>(R.id.tvDetailDescription)
-        val btnContact = view.findViewById<Button>(R.id.btnContact)
+        val btnContact = view.findViewById<MaterialButton>(R.id.btnContact)
         val btnAdminMenu = view.findViewById<ImageButton>(R.id.btnAdminMenu)
         val btnCloseDetail = view.findViewById<ImageButton>(R.id.btnCloseDetail)
 
@@ -210,13 +211,17 @@ class CatalogActivity : AppCompatActivity() {
 
         // Configuración del botón de contacto y menú de admin
         val isAdmin = currentRol == "ADMIN"
+        val isOwner = prenda.idUsuario == currentUserId
 
-        if (prenda.idUsuario == currentUserId) {
-            btnContact.visibility = View.GONE
+        if (isOwner) {
+            btnContact.text = "EDITAR MI PUBLICACIÓN"
+            btnContact.setIconResource(android.R.drawable.ic_menu_edit)
+            btnContact.iconTint = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
         } else if (isAdmin) {
             btnContact.text = getString(R.string.btn_contact_admin)
-            // Se mantiene el diseño visual del botón (color e icono) para un acabado Premium y consistente
-
+            btnContact.setIconResource(R.drawable.ic_whatsapp)
+            btnContact.iconTint = null
+            
             // MOSTRAR MENÚ DE ADMINISTRACIÓN MODERNO
             btnAdminMenu.visibility = View.VISIBLE
             btnAdminMenu.setOnClickListener {
@@ -228,7 +233,6 @@ class CatalogActivity : AppCompatActivity() {
 
                 optObserve.setOnClickListener {
                     optionsDialog.dismiss()
-                    // Mostrar diálogo de observación (ya modernizado)
                     val dialogView = layoutInflater.inflate(R.layout.dialog_admin_observe, null)
                     val customDialog = androidx.appcompat.app.AlertDialog.Builder(this)
                         .setView(dialogView)
@@ -264,7 +268,6 @@ class CatalogActivity : AppCompatActivity() {
 
                 optDelete.setOnClickListener {
                     optionsDialog.dismiss()
-                    // Mostrar diálogo de eliminación (ya modernizado)
                     val dialogView = layoutInflater.inflate(R.layout.dialog_admin_delete, null)
                     val customDialog = androidx.appcompat.app.AlertDialog.Builder(this)
                         .setView(dialogView)
@@ -293,6 +296,9 @@ class CatalogActivity : AppCompatActivity() {
             }
         } else {
             btnContact.text = getString(R.string.btn_contact)
+            btnContact.setIconResource(R.drawable.ic_whatsapp)
+            btnContact.iconTint = null
+            btnAdminMenu.visibility = View.GONE
         }
 
         // Configurar botón cerrar
@@ -352,82 +358,123 @@ class CatalogActivity : AppCompatActivity() {
             behavior.skipCollapsed = true
         }
 
-        // Botón de contacto al hacer clic
+        // Botón de contacto consolidado
         btnContact.setOnClickListener {
+            val uid = currentUserId
+            if (uid == null) {
+                Toast.makeText(this, "Inicie sesión para continuar", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // CASO 1: Es el dueño -> Redirigir a edición
+            if (isOwner) {
+                val intent = android.content.Intent(this, DeliverActivity::class.java)
+                intent.putExtra("EDIT_PRENDA_ID", prenda.id)
+                startActivity(intent)
+                dialog.dismiss()
+                return@setOnClickListener
+            }
+
+            // Prevenir doble clic
+            btnContact.isEnabled = false
+            val originalText = btnContact.text.toString()
+            btnContact.text = "Procesando..."
+
             val firestore = FirebaseFirestore.getInstance()
+            
+            // Obtener datos del dueño (teléfono)
             firestore.collection("usuarios").document(prenda.idUsuario)
                 .get()
                 .addOnSuccessListener { doc ->
                     val telefono = doc.getString("telefono")
                     if (!telefono.isNullOrEmpty()) {
-                        try {
-                            val isAdmin = currentRol == "ADMIN"
-                            val mensaje: String
-                            
-                            if (isAdmin) {
-                                mensaje = getString(R.string.admin_contact_message, prenda.titulo)
-                                firestore.collection("prendas").document(prenda.id)
-                                    .update(mapOf(
-                                        "estadoPublicacion" to "OBSERVADA",
-                                        "observacion" to "Publicación bajo supervisión del administrador"
-                                    ))
-                                    .addOnSuccessListener { loadProducts() }
-                            } else {
-                                // Flujo ESTUDIANTE: Reserva de prenda y gestión de puntos
-                                currentUserId?.let { uid ->
-                                    firestore.collection("usuarios").document(uid).get()
-                                        .addOnSuccessListener { userDoc ->
-                                            val puntosUsuario = userDoc.getLong("puntos") ?: 0
-                                            if (puntosUsuario < prenda.puntos) {
-                                                Toast.makeText(this@CatalogActivity, getString(R.string.error_insufficient_points, prenda.puntos), Toast.LENGTH_SHORT).show()
-                                                return@addOnSuccessListener
-                                            }
+                        if (isAdmin) {
+                            // CASO 2: Admin -> Observar y contactar
+                            val mensaje = getString(R.string.admin_contact_message, prenda.titulo)
+                            firestore.collection("prendas").document(prenda.id)
+                                .update(mapOf(
+                                    "estadoPublicacion" to "OBSERVADA",
+                                    "observacion" to "Publicación bajo supervisión del administrador"
+                                ))
+                                .addOnSuccessListener { 
+                                    loadProducts()
+                                    abrirWhatsApp(telefono, mensaje)
+                                    dialog.dismiss()
+                                }
+                                .addOnFailureListener { e ->
+                                    btnContact.isEnabled = true
+                                    btnContact.text = originalText
+                                    Toast.makeText(this, "Error Admin: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            // CASO 3: Estudiante -> Reserva (Chequeo de puntos)
+                            firestore.collection("usuarios").document(uid).get()
+                                .addOnSuccessListener { userDoc ->
+                                    val puntosUsuario = userDoc.getLong("puntos") ?: 0
+                                    if (puntosUsuario < prenda.puntos) {
+                                        Toast.makeText(this, "Puntos insuficientes (${prenda.puntos} req.)", Toast.LENGTH_SHORT).show()
+                                        btnContact.isEnabled = true
+                                        btnContact.text = originalText
+                                        return@addOnSuccessListener
+                                    }
 
-                                            // Reservamos la prenda y restamos puntos en Firestore (Transacción recomendada, pero aquí simple por ahora)
-                                            firestore.collection("prendas").document(prenda.id)
-                                                .update(mapOf(
-                                                    "estadoPublicacion" to "EN PROCESO",
-                                                    "receptorId" to uid
-                                                ))
-                                            
-                                            firestore.collection("usuarios").document(uid)
-                                                .update("puntos", puntosUsuario - prenda.puntos)
+                                    // Transacción de Reserva
+                                    val reserveMsg = getString(R.string.contact_message_template, prenda.titulo)
+                                    val batch = firestore.batch()
+                                    
+                                    val prendaRef = firestore.collection("prendas").document(prenda.id)
+                                    batch.update(prendaRef, mapOf(
+                                        "estadoPublicacion" to "EN PROCESO",
+                                        "receptorId" to uid
+                                    ))
+
+                                    val userRef = firestore.collection("usuarios").document(uid)
+                                    batch.update(userRef, "puntos", puntosUsuario - prenda.puntos)
+
+                                    batch.commit()
+                                        .addOnSuccessListener {
+                                            abrirWhatsApp(telefono, reserveMsg)
+                                            loadProducts()
+                                            dialog.dismiss()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            btnContact.isEnabled = true
+                                            btnContact.text = originalText
+                                            Toast.makeText(this, "Fallo al reservar: ${e.message}", Toast.LENGTH_LONG).show()
                                         }
                                 }
-                                mensaje = getString(R.string.contact_message_template, prenda.titulo)
-                            }
-
-                            // Intentos de WhatsApp
-                            val whatsappUriUri = android.net.Uri.parse("whatsapp://send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}")
-                            val intentNative = android.content.Intent(android.content.Intent.ACTION_VIEW, whatsappUriUri)
-                            try {
-                                startActivity(intentNative)
-                            } catch (eNative: Exception) {
-                                val webUrl = "https://api.whatsapp.com/send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}"
-                                val intentWeb = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
-                                try {
-                                    startActivity(intentWeb)
-                                } catch (eWeb: Exception) {
-                                    Toast.makeText(this, "Error al abrir WhatsApp", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
                     } else {
-                        Toast.makeText(this, getString(R.string.error_no_phone), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "El vendedor no tiene teléfono registrado", Toast.LENGTH_SHORT).show()
+                        btnContact.isEnabled = true
+                        btnContact.text = originalText
                     }
-                    dialog.dismiss()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Error conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+                    btnContact.isEnabled = true
+                    btnContact.text = originalText
                 }
         }
-
-        dialog.setContentView(view)
         
-        // Forzar que el diálogo se abra completo (Expandido) y no se colapse a la mitad
-        dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-        dialog.behavior.skipCollapsed = true
-
         dialog.show()
+    }
+
+    // Función auxiliar para abrir WhatsApp de forma segura
+    private fun abrirWhatsApp(telefono: String, mensaje: String) {
+        val whatsappUriUri = android.net.Uri.parse("whatsapp://send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}")
+        val intentNative = android.content.Intent(android.content.Intent.ACTION_VIEW, whatsappUriUri)
+        try {
+            startActivity(intentNative)
+        } catch (eNative: Exception) {
+            val webUrl = "https://api.whatsapp.com/send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}"
+            val intentWeb = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
+            try {
+                startActivity(intentWeb)
+            } catch (eWeb: Exception) {
+                Toast.makeText(this, "Error al abrir WhatsApp", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     // Muestra la imagen de la prenda a pantalla completa
