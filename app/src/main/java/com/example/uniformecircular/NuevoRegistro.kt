@@ -21,6 +21,7 @@ import android.view.View
 
 class NuevoRegistro : AppCompatActivity() {
 
+    private lateinit var tilNombre: TextInputLayout
     private lateinit var tilUsuario: TextInputLayout
     private lateinit var tilTelefono: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
@@ -40,19 +41,31 @@ class NuevoRegistro : AppCompatActivity() {
             insets
         }
 
+        val etNombre = findViewById<EditText>(R.id.nombre)
         val etUsuario = findViewById<EditText>(R.id.usuario)
         val etTelefono = findViewById<EditText>(R.id.telefono)
         val etPassword = findViewById<TextInputEditText>(R.id.password)
         val etRepPassword = findViewById<TextInputEditText>(R.id.rep_password)
+        
+        tilNombre = findViewById(R.id.nombreInputLayout)
         tilUsuario = findViewById(R.id.usuarioInputLayout)
         tilTelefono = findViewById(R.id.phoneInputLayout)
         tilPassword = findViewById(R.id.passwordInputLayout)
         tilRepPassword = findViewById(R.id.repPasswordInputLayout)
+        
         val tvSubtitulo = findViewById<android.widget.TextView>(R.id.subtituloRegistro)
         val btnRegistrarUsuario = findViewById<Button>(R.id.btnRegistrarUsuario)
         val btnVolverLogin = findViewById<Button>(R.id.btnVolverLogin)
 
         // Limpiar errores al escribir y validar espacios en tiempo real
+        etNombre.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                tilNombre.error = null
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
         etUsuario.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -107,12 +120,21 @@ class NuevoRegistro : AppCompatActivity() {
         })
 
         btnRegistrarUsuario.setOnClickListener {
-            val user = etUsuario.text.toString() // Sin trim para detectar espacios
+            val nombre = etNombre.text.toString().trim()
+            val user = etUsuario.text.toString() // Sin trim para detectar espacios en validación
             val phone = etTelefono.text.toString().trim()
             val pass = etPassword.text.toString()
             val repPass = etRepPassword.text.toString()
 
             var isValid = true
+
+            if (nombre.isEmpty()) {
+                tilNombre.error = getString(R.string.error_name_empty)
+                isValid = false
+            } else if (!nombre.contains(" ")) {
+                tilNombre.error = getString(R.string.error_name_invalid)
+                isValid = false
+            }
 
             // Validar espacios en el usuario
             if (user.contains(" ")) {
@@ -153,16 +175,21 @@ class NuevoRegistro : AppCompatActivity() {
             // --- LÓGICA DE FIREBASE ---
             val mAuth = FirebaseAuth.getInstance()
             val db = FirebaseFirestore.getInstance()
-            val emailFicticio = "$user@upn.pe"
+            
+            val userClean = user.trim().replace("\\s".toRegex(), "").lowercase()
+            val emailReal = if (userClean.contains("@")) userClean else "$userClean@upn.pe"
 
-            // 1. Crear usuario en Auth
-            mAuth.createUserWithEmailAndPassword(emailFicticio, pass)
+            // 1. Crear usuario en Auth con el correo real
+            mAuth.createUserWithEmailAndPassword(emailReal, pass)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         val userId = mAuth.currentUser?.uid
-                        val isAdminUser = user.lowercase() == "admin"
+                        val cleanUsernameForDB = userClean.split("@")[0].uppercase()
+                        val isAdminUser = cleanUsernameForDB.lowercase() == "admin"
+                        
                         val datosUsuario = hashMapOf(
-                            "usuario" to user,
+                            "nombre" to nombre,
+                            "usuario" to cleanUsernameForDB,
                             "telefono" to phone,
                             "puntos" to if (isAdminUser) 0 else 100, // Bono de bienvenida: 100 puntos para usuarios normales, 0 para admin
                             "rol" to if (isAdminUser) "ADMIN" else "USER"

@@ -67,6 +67,12 @@ class ExchangesActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+
+        // Botón Actualizar
+        findViewById<ImageButton>(R.id.btnRefresh).setOnClickListener {
+            loadData()
+            Toast.makeText(this, "Lista actualizada", Toast.LENGTH_SHORT).show()
+        }
         // Configurar el RecyclerView
         setupRecyclerView()
         setupTabs()
@@ -315,7 +321,7 @@ class ExchangesActivity : AppCompatActivity() {
             if (!receptorId.isNullOrEmpty()) {
                 FirebaseFirestore.getInstance().collection("usuarios").document(receptorId).get()
                     .addOnSuccessListener { doc ->
-                        tvUser.text = doc.getString("usuario") ?: "Estudiante"
+                        tvUser.text = doc.getString("nombre") ?: doc.getString("usuario") ?: "Estudiante"
                     }
             } else {
                 tvUser.text = "Sin reservar"
@@ -324,7 +330,7 @@ class ExchangesActivity : AppCompatActivity() {
             tvMainTitle.text = "Detalle de mi Canje"
             FirebaseFirestore.getInstance().collection("usuarios").document(prenda.idUsuario).get()
                 .addOnSuccessListener { doc ->
-                    tvUser.text = doc.getString("usuario") ?: "Estudiante"
+                    tvUser.text = doc.getString("nombre") ?: doc.getString("usuario") ?: "Estudiante"
                 }
         }
         // Configurar detalles de la prenda en el diálogo

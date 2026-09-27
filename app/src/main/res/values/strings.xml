@@ -5,12 +5,14 @@
     <string name="welcome_prefix">Bienvenido,</string>
     <string name="logout">Cerrar Sesión</string>
     <string name="login_title">Login</string>
-    <string name="hint_username">Usuario</string>
+    <string name="hint_username">Código de Estudiante (N0...)</string>
+    <string name="helper_text_username">Se vinculará a tu correo @upn.pe</string>
     <string name="hint_password">Contraseña</string>
     <string name="login_button">Ingresar</string>
     <string name="register_button">Nuevo Registro</string>
     <string name="forgot_password">¿Olvidaste la contraseña?</string>
     <string name="title_register">Registro</string>
+    <string name="hint_full_name">Nombre Completo</string>
     <string name="subtitle_register">Crea tu cuenta para continuar</string>
     <string name="hint_confirm_password">Confirmar contraseña</string>
     <string name="hint_phone">Teléfono de contacto</string>
@@ -27,6 +29,8 @@
     <string name="error_password_too_short">La contraseña debe tener al menos 8 caracteres</string>
     <string name="error_password_no_spaces">La contraseña no puede contener espacios</string>
     <string name="error_username_no_spaces">El usuario no puede contener espacios</string>
+    <string name="error_name_empty">Por favor, ingresa tu nombre</string>
+    <string name="error_name_invalid">Por favor, ingresa al menos un nombre y un apellido</string>
     <string name="success_registration">¡Registro exitoso! Recibiste 100 puntos de bienvenida.</string>
     <string name="welcome_bonus_info">¡Gana 100 puntos gratis al registrarte hoy!</string>
     <string name="admin_info_sub">Cuenta de gestión y control del catálogo institucional.</string>
@@ -98,6 +102,7 @@
     <string name="btn_understand">Entendido</string>
     <string name="title_details">Detalles de la Prenda</string>
     <string name="desc_admin_menu">Opciones de administración</string>
+    <string name="refresh">Actualizar</string>
     <string name="label_published_by">Publicado por: %1$s</string>
     <string name="btn_contact">Contactar Estudiante</string>
     <string name="btn_contact_admin">Supervisar Publicación</string>

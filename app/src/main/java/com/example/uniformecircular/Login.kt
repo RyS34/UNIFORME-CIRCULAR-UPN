@@ -70,13 +70,14 @@ class Login : AppCompatActivity() {
             etPassword.setText(savedPass)
             cbRememberMe.isChecked = true
 
-            // Validar con Firebase de forma transparente
-            val emailFicticio = "$savedUser@upn.pe"
-            FirebaseAuth.getInstance().signInWithEmailAndPassword(emailFicticio, savedPass)
+            // Validar con Firebase de forma transparente usando el dominio institucional real
+            val userCleanSaved = savedUser.trim().replace("\\s".toRegex(), "").lowercase()
+            val email = if (userCleanSaved.contains("@")) userCleanSaved else "$userCleanSaved@upn.pe"
+            FirebaseAuth.getInstance().signInWithEmailAndPassword(email, savedPass)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         val intent = Intent(this, MainActivity::class.java).apply {
-                            putExtra("USER_NAME", savedUser)
+                            putExtra("USER_NAME", savedUser.split("@")[0])
                         }
                         val options = ActivityOptions.makeSceneTransitionAnimation(this, findViewById(R.id.imgLogoContainer), "logo_shared")
                         startActivity(intent, options.toBundle())
@@ -178,9 +179,11 @@ class Login : AppCompatActivity() {
 
             // --- LÓGICA DE LOGIN CON FIREBASE ---
             val mAuth = FirebaseAuth.getInstance()
-            val emailFicticio = "${user.trim()}@upn.pe"
+            // Lógica Híbrida Robusta: Limpiamos todo espacio oculto y pasamos a minúsculas para Firebase Auth
+            val userClean = user.trim().replace("\\s".toRegex(), "").lowercase()
+            val email = if (userClean.contains("@")) userClean else "$userClean@upn.pe"
 
-            mAuth.signInWithEmailAndPassword(emailFicticio, pass)
+            mAuth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         // Guardar o limpiar preferencia de recordar
@@ -196,7 +199,9 @@ class Login : AppCompatActivity() {
 
                         // Ir a la pantalla principal
                         val intent = Intent(this, MainActivity::class.java).apply {
-                            putExtra("USER_NAME", user)
+                            // Extraer el nombre de usuario limpio si ingresó correo
+                            val cleanUser = user.split("@")[0]
+                            putExtra("USER_NAME", cleanUser)
                         }
                         val options = ActivityOptions.makeSceneTransitionAnimation(this, findViewById(R.id.imgLogoContainer), "logo_shared")
                         startActivity(intent, options.toBundle())
@@ -252,20 +257,23 @@ class Login : AppCompatActivity() {
             val user = etUser.text.toString().trim()
 
             if (user.isEmpty()) {
-                tilUser.error = "Ingresa tu usuario"
+                tilUser.error = "Ingresa tu usuario o correo"
                 return@setOnClickListener
             }
-            // Validar espacios en el usuario ingresado
-            val emailFicticio = "$user@upn.pe"
-            FirebaseAuth.getInstance().sendPasswordResetEmail(emailFicticio)
+            
+            // Lógica Híbrida Robusta: Limpiamos todo espacio oculto y pasamos a minúsculas para Firebase Auth
+            val userCleanRecup = user.trim().replace("\\s".toRegex(), "").lowercase()
+            val emailRecuperacion = if (userCleanRecup.contains("@")) userCleanRecup else "$userCleanRecup@upn.pe"
+            
+            FirebaseAuth.getInstance().sendPasswordResetEmail(emailRecuperacion)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        Toast.makeText(this, "Se envió un enlace de recuperación a tu correo institucional ($emailFicticio)", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Se envió un enlace de recuperación a tu correo institucional ($emailRecuperacion)", Toast.LENGTH_LONG).show()
                         dialog.dismiss()
                     } else {
                         val errorMsg = task.exception?.message ?: ""
                         if (errorMsg.contains("user-not-found") || errorMsg.contains("invalid-credential") || errorMsg.contains("There is no user record")) {
-                            Toast.makeText(this, "El usuario ingresado no existe", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "El correo $emailRecuperacion no está registrado", Toast.LENGTH_SHORT).show()
                         } else if (errorMsg.contains("network-request-failed")) {
                             Toast.makeText(this, "Error de red: Verifica tu conexión a internet", Toast.LENGTH_SHORT).show()
                         } else {

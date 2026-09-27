@@ -106,7 +106,7 @@
                         android:id="@+id/tvAccountEmail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="usuario@upn.pe"
+                        android:text="usuario@upn.edu.pe"
                         android:textColor="@color/slate_500"
                         android:textSize="14sp" />
 

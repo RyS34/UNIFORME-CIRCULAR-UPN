@@ -61,8 +61,8 @@ class AccountActivity : AppCompatActivity() {
             val db = FirebaseFirestore.getInstance()
             db.collection("usuarios").document(uid).get()
                 .addOnSuccessListener { doc ->
-                    val username = doc.getString("usuario") ?: "Usuario"
-                    tvName.text = username
+                    val displayName = doc.getString("nombre") ?: doc.getString("usuario") ?: "Usuario"
+                    tvName.text = displayName
                     tvEmail.text = FirebaseAuth.getInstance().currentUser?.email
                     tvPoints.text = (doc.getLong("puntos") ?: 0).toString()
                     tvPhone.text = doc.getString("telefono") ?: "No registrado"

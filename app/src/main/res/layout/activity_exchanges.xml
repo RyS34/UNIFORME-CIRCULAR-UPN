@@ -66,6 +66,17 @@
                         android:textColor="@color/slate_800"
                         android:textSize="20sp"
                         android:fontFamily="sans-serif-medium" />
+
+                    <ImageButton
+                        android:id="@+id/btnRefresh"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/refresh"
+                        android:src="@drawable/ic_refresh"
+                        app:tint="@color/brand_blue" />
                 </RelativeLayout>
             </LinearLayout>
 

@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
             FirebaseFirestore.getInstance().collection("usuarios").document(uid)
                 .get()
                 .addOnSuccessListener { doc ->
-                    currentUserName = doc.getString("usuario") ?: "Usuario"
+                    currentUserName = doc.getString("nombre") ?: doc.getString("usuario") ?: "Usuario"
                     tvWelcome.text = currentUserName
                     actualizarPuntosVista()
                 }

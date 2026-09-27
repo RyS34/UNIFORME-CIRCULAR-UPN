@@ -84,6 +84,12 @@ class CatalogActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+
+        // Botón Actualizar
+        findViewById<ImageButton>(R.id.btnRefresh).setOnClickListener {
+            loadProducts()
+            Toast.makeText(this, "Catálogo actualizado", Toast.LENGTH_SHORT).show()
+        }
         // Configuramos el RecyclerView
         setupRecyclerView()
         setupFilterChips()
@@ -192,7 +198,7 @@ class CatalogActivity : AppCompatActivity() {
         FirebaseFirestore.getInstance().collection("usuarios").document(prenda.idUsuario)
             .get()
             .addOnSuccessListener { doc ->
-                tvOwner.text = doc.getString("usuario") ?: "Estudiante"
+                tvOwner.text = doc.getString("nombre") ?: doc.getString("usuario") ?: "Estudiante"
             }
 
         tvType.text = prenda.tipoTransaccion

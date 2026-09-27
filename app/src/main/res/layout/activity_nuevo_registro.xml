@@ -108,10 +108,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
-
-                        <!-- Input Usuario -->
+NN
+                        <!-- Input Nombre Completo -->
                         <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/usuarioInputLayout"
+                            android:id="@+id/nombreInputLayout"
                             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -122,8 +122,37 @@
                             app:boxStrokeColor="@color/brand_blue"
                             app:startIconDrawable="@drawable/baseline_person_24"
                             app:startIconTint="@color/brand_blue"
+                            android:hint="@string/hint_full_name"
+                            app:hintTextColor="@color/brand_blue"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/nombre"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textCapWords|textPersonName"
+                                android:textColor="@color/slate_800"
+                                android:textSize="15sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Input Usuario -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/usuarioInputLayout"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            app:boxCornerRadiusBottomEnd="16dp"
+                            app:boxCornerRadiusBottomStart="16dp"
+                            app:boxCornerRadiusTopEnd="16dp"
+                            app:boxCornerRadiusTopStart="16dp"
+                            app:boxStrokeColor="@color/brand_blue"
+                            app:startIconDrawable="@drawable/baseline_person_24"
+                            app:startIconTint="@color/brand_blue"
                             android:hint="@string/hint_username"
                             app:hintTextColor="@color/brand_blue"
+                            app:helperText="@string/helper_text_username"
+                            app:helperTextEnabled="true"
                             app:errorEnabled="true">
 
                             <com.google.android.material.textfield.TextInputEditText
