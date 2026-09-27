@@ -441,26 +441,34 @@ class ExchangesActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.delete_btn_positive)) { _, _ ->
                 val firestore = FirebaseFirestore.getInstance()
                 
-                // Si la prenda estaba reservada (EN PROCESO), devolvemos los puntos al receptor
-                if (prenda.estado == "EN PROCESO") {
-                    prenda.idReceptor?.let { receptorId ->
-                        firestore.collection("usuarios").document(receptorId).get()
-                            .addOnSuccessListener { doc ->
-                                val puntosActuales = doc.getLong("puntos") ?: 0
-                                doc.reference.update("puntos", puntosActuales + prenda.puntos)
-                            }
-                    }
-                }
+                val prendaRef = firestore.collection("prendas").document(prenda.id)
+                val receptorId = prenda.idReceptor
 
-                firestore.collection("prendas").document(prenda.id).delete()
-                    .addOnSuccessListener {
-                        val msg = if (prenda.estado == "EN PROCESO") 
-                            getString(R.string.delete_success_refund)
-                        else getString(R.string.delete_success)
+                if (prenda.estado == "EN PROCESO" && receptorId != null) {
+                    val userRef = firestore.collection("usuarios").document(receptorId)
+                    
+                    firestore.runTransaction { transaction ->
+                        val userDoc = transaction.get(userRef)
+                        val points = userDoc.getLong("puntos") ?: 0
                         
-                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                        transaction.delete(prendaRef)
+                        transaction.update(userRef, "puntos", points + prenda.puntos)
+                        null
+                    }.addOnSuccessListener {
+                        Toast.makeText(this, getString(R.string.delete_success_refund), Toast.LENGTH_SHORT).show()
                         loadData()
+                    }.addOnFailureListener { e ->
+                        Toast.makeText(this, "Error transaction: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
+                } else {
+                    prendaRef.delete()
+                        .addOnSuccessListener {
+                            Toast.makeText(this, getString(R.string.delete_success), Toast.LENGTH_SHORT).show()
+                            loadData()
+                        }.addOnFailureListener { e ->
+                            Toast.makeText(this, "Error delete: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
             }
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()

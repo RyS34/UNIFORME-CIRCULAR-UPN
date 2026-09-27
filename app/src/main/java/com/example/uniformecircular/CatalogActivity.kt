@@ -57,6 +57,7 @@ class CatalogActivity : AppCompatActivity() {
                 .get()
                 .addOnSuccessListener { doc ->
                     currentRol = doc.getString("rol") ?: "USER"
+                    loadProducts()
                 }
         }
 
@@ -258,6 +259,9 @@ class CatalogActivity : AppCompatActivity() {
                                     loadProducts()
                                     customDialog.dismiss()
                                     dialog.dismiss()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(this@CatalogActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                         } else {
                             etMotivo.error = getString(R.string.error_empty_observation)
@@ -672,9 +676,10 @@ class CatalogActivity : AppCompatActivity() {
             val matchesCarrera = selectedCarrera == "Todas" || prenda.carrera.equals(selectedCarrera, ignoreCase = true)
             val matchesTalla = selectedTalla == "Todas" || prenda.talla.equals(selectedTalla, ignoreCase = true)
             val matchesGenero = selectedGenero == "Todos" || prenda.genero.equals(selectedGenero, ignoreCase = true)
-            val isAvailable = prenda.estado == "DISPONIBLE"
+            val isAdmin = currentRol == "ADMIN"
+            val isVisible = prenda.estado == "DISPONIBLE" || (isAdmin && prenda.estado == "OBSERVADA")
             
-            matchesSearch && matchesCarrera && matchesTalla && matchesGenero && isAvailable
+            matchesSearch && matchesCarrera && matchesTalla && matchesGenero && isVisible
         }
         // Actualizamos el adaptador con la lista filtrada
         adapter.updateList(filteredList)
