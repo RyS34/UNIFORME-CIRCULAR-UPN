@@ -18,14 +18,16 @@ import android.widget.EditText
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.annotation.SuppressLint
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var dbHelper: DBHelper
     private lateinit var adapter: ProductAdapter
     private var allProducts: List<Prenda> = listOf()
 
-    private var currentUserId: Int = -1
+    private var currentUserId: String? = null
     private var currentUserName: String = "Usuario"
 
     private fun Int.toPx(context: android.content.Context): Int = (this * context.resources.displayMetrics.density).toInt()
@@ -36,7 +38,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        dbHelper = DBHelper(this)
+        val user = FirebaseAuth.getInstance().currentUser
+        currentUserId = user?.uid
 
         // Ajustar insets para que el fondo sea total
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { _, insets ->
@@ -44,16 +47,20 @@ class MainActivity : AppCompatActivity() {
             findViewById<View>(R.id.linearLayoutTop)?.setPadding(24.toPx(this), systemBars.top + 10.toPx(this), 24.toPx(this), 10.toPx(this))
             insets
         }
-
+        // Configurar vistas y datos iniciales del usuario
         val tvWelcome = findViewById<TextView>(R.id.tvWelcome)
         val etSearch = findViewById<EditText>(R.id.etMainSearch)
         val imgAvatarMain = findViewById<View>(R.id.imgAvatarMain)
 
-        val username = intent.getStringExtra("USER_NAME") ?: "Usuario"
-        currentUserName = username
-        currentUserId = dbHelper.obtenerUsuarioId(username)
-        tvWelcome.text = username
-        actualizarPuntosVista()
+        currentUserId?.let { uid ->
+            FirebaseFirestore.getInstance().collection("usuarios").document(uid)
+                .get()
+                .addOnSuccessListener { doc ->
+                    currentUserName = doc.getString("usuario") ?: "Usuario"
+                    tvWelcome.text = currentUserName
+                    actualizarPuntosVista()
+                }
+        }
 
         setupRecyclerView()
         setupSearch(etSearch)
@@ -61,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         // Perfil Listener
         imgAvatarMain?.setOnClickListener {
             val intent = Intent(this, AccountActivity::class.java).apply {
-                putExtra("USER_NAME", username)
+                putExtra("USER_NAME", currentUserName)
             }
             val options = ActivityOptions.makeCustomAnimation(this, R.anim.slide_in_right, R.anim.slide_out_left)
             startActivity(intent, options.toBundle())
@@ -70,21 +77,21 @@ class MainActivity : AppCompatActivity() {
         // Menu Listeners
         findViewById<View>(R.id.menuCatalog)?.setOnClickListener {
             val intent = Intent(this, CatalogActivity::class.java).apply {
-                putExtra("USER_NAME", username)
+                putExtra("USER_NAME", currentUserName)
             }
             val options = ActivityOptions.makeCustomAnimation(this, R.anim.slide_in_right, R.anim.slide_out_left)
             startActivity(intent, options.toBundle())
         }
         findViewById<View>(R.id.menuDeliver)?.setOnClickListener {
             val intent = Intent(this, DeliverActivity::class.java).apply {
-                putExtra("USER_NAME", username)
+                putExtra("USER_NAME", currentUserName)
             }
             val options = ActivityOptions.makeCustomAnimation(this, R.anim.slide_in_right, R.anim.slide_out_left)
             startActivity(intent, options.toBundle())
         }
         findViewById<View>(R.id.menuExchanges)?.setOnClickListener {
             val intent = Intent(this, ExchangesActivity::class.java).apply {
-                putExtra("USER_NAME", username)
+                putExtra("USER_NAME", currentUserName)
             }
             val options = ActivityOptions.makeCustomAnimation(this, R.anim.slide_in_right, R.anim.slide_out_left)
             startActivity(intent, options.toBundle())
@@ -96,7 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         // Clic en la tarjeta de Impacto para ver un resumen rápido
         findViewById<View>(R.id.cardImpact)?.setOnClickListener {
-            mostrarResumenImpacto(username)
+            mostrarResumenImpacto(currentUserName)
         }
 
         // Categorías Populares
@@ -109,7 +116,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.tvRecentViewAll)?.setOnClickListener { openCatalogWithFilter("Todas") }
     }
     @SuppressLint("InflateParams")
-    private fun mostrarResumenImpacto(username: String) {
+    private fun mostrarResumenImpacto(currentUserName: String) {
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val view = layoutInflater.inflate(R.layout.dialog_impact_summary, null)
 
@@ -119,55 +126,66 @@ class MainActivity : AppCompatActivity() {
         val tvStatAportes = view.findViewById<TextView>(R.id.tvStatAportes)
         val tvStatPuntos = view.findViewById<TextView>(R.id.tvStatPuntos)
 
-        // Obtener prendas del usuario
-        val misPrendas = dbHelper.obtenerPrendasPorUsuario(currentUserId)
-        
-        // Calcular puntos totales generados por sus prendas
-        val puntosGenerados = misPrendas.sumOf { it.puntos }
-        
-        tvStatAportes.text = misPrendas.size.toString()
-        tvStatPuntos.text = puntosGenerados.toString()
+        // Obtener prendas del usuario desde Firestore
+        currentUserId?.let { uid ->
+            FirebaseFirestore.getInstance().collection("prendas")
+                .whereEqualTo("vendedorId", uid)
+                .get()
+                .addOnSuccessListener { result ->
+                    val misPrendas = result.map { doc ->
+                        Prenda(
+                            id = doc.id,
+                            idUsuario = doc.getString("vendedorId") ?: "",
+                            titulo = doc.getString("titulo") ?: "",
+                            descripcion = doc.getString("descripcion") ?: "",
+                            carrera = doc.getString("carrera") ?: "",
+                            talla = doc.getString("talla") ?: "",
+                            genero = doc.getString("genero") ?: "",
+                            tipoTransaccion = doc.getString("tipo") ?: "",
+                            puntos = doc.getLong("puntos")?.toInt() ?: 0,
+                            imagenUri = doc.getString("urlImagen"),
+                            estado = doc.getString("estadoPublicacion") ?: "DISPONIBLE",
+                            idReceptor = doc.getString("receptorId"),
+                            estadoFisico = doc.getString("estadoFisico") ?: "Usado",
+                            observacion = doc.getString("observacion")
+                        )
+                    }
+                    
+                    val puntosGenerados = misPrendas.sumOf { it.puntos }
+                    tvStatAportes.text = misPrendas.size.toString()
+                    tvStatPuntos.text = puntosGenerados.toString()
 
-        if (misPrendas.isEmpty()) {
-            tvDesc.text = "Aún no has realizado aportes. ¡Empieza hoy!"
-            view.findViewById<View>(R.id.layoutStats).visibility = View.GONE
-        } else {
-            tvDesc.text = "Has contribuido a la economía circular de la UPN"
-        }
+                    if (misPrendas.isEmpty()) {
+                        tvDesc.text = "Aún no has realizado aportes. ¡Empieza hoy!"
+                        view.findViewById<View>(R.id.layoutStats).visibility = View.GONE
+                    } else {
+                        tvDesc.text = "Has contribuido a la economía circular de la UPN"
+                    }
 
-        rvContributions.layoutManager = LinearLayoutManager(this)
-        // Usamos el adaptador, pero indicando que use el layout compacto si fuera necesario,
-        // o simplemente confiamos en que al ser un BottomSheet el RecyclerView se ajustará.
-        // Dado que ProductAdapter infla R.layout.item_product, vamos a crear uno específico o modificarlo.
-        
-        val impactAdapter = ProductAdapter(misPrendas, isCompact = true) { prenda ->
-            if (prenda.estado == "OBSERVADA") {
-                // Si está en observación, redirigir directamente a Mis Aportes para que la corrija
-                val intent = Intent(this, ExchangesActivity::class.java).apply {
-                    putExtra("USER_NAME", username)
-                    putExtra("SELECT_TAB", 0)
+                    rvContributions.layoutManager = LinearLayoutManager(this)
+                    val impactAdapter = ProductAdapter(misPrendas, isCompact = true) { prenda ->
+                        if (prenda.estado == "OBSERVADA") {
+                            val intent = Intent(this, ExchangesActivity::class.java).apply {
+                                putExtra("USER_NAME", currentUserName)
+                                putExtra("SELECT_TAB", 0)
+                            }
+                            startActivity(intent)
+                        } else {
+                            val intent = Intent(this, CatalogActivity::class.java).apply {
+                                putExtra("PRENDA_ID", prenda.id)
+                                putExtra("USER_NAME", currentUserName)
+                            }
+                            startActivity(intent)
+                        }
+                        dialog.dismiss()
+                    }
+                    rvContributions.adapter = impactAdapter
                 }
-                startActivity(intent)
-                android.widget.Toast.makeText(this, "Esta publicación requiere corrección. Revisa los detalles.", android.widget.Toast.LENGTH_LONG).show()
-            } else {
-                val intent = Intent(this, CatalogActivity::class.java).apply {
-                    putExtra("PRENDA_ID", prenda.id)
-                    putExtra("USER_NAME", currentUserName)
-                }
-                startActivity(intent)
-            }
-            dialog.dismiss()
         }
-        
-        // MODIFICACIÓN: Para el diálogo de impacto, usamos una versión más pequeña si es posible.
-        // Como no queremos cambiar el ProductAdapter original para no romper el Home, 
-        // vamos a sobrecargar el adapter o usar uno específico para el impacto.
-
-        rvContributions.adapter = impactAdapter
 
         btnManage.setOnClickListener {
             val intent = Intent(this, ExchangesActivity::class.java).apply {
-                putExtra("USER_NAME", username)
+                putExtra("USER_NAME", currentUserName)
                 putExtra("SELECT_TAB", 0)
             }
             startActivity(intent)
@@ -189,12 +207,12 @@ class MainActivity : AppCompatActivity() {
     // Configuramos el RecyclerView para mostrar las prendas recientes
     private fun setupRecyclerView() {
         val recyclerView = findViewById<RecyclerView>(R.id.rvRecentProducts)
-        val username = intent.getStringExtra("USER_NAME") ?: "Usuario"
+        val currentUserName = intent.getStringExtra("USER_NAME") ?: "Usuario"
         adapter = ProductAdapter(emptyList(), isCompact = false) { prenda ->
             // Abrir catálogo con el producto seleccionado (o mostrar detalle directo)
             val intent = Intent(this, CatalogActivity::class.java).apply {
                 putExtra("PRENDA_ID", prenda.id)
-                putExtra("USER_NAME", username)
+                putExtra("USER_NAME", currentUserName)
             }
             startActivity(intent)
         }
@@ -256,56 +274,54 @@ class MainActivity : AppCompatActivity() {
     }
     // Actualizamos los puntos del usuario en la vista de inicio y el impacto circular (conteo de aportes)
     private fun actualizarPuntosVista() {
-        if (currentUserId != -1) {
-            val puntos = dbHelper.obtenerPuntosUsuario(currentUserId)
-            findViewById<TextView>(R.id.tvPointsCount)?.text = "$puntos Pts"
+        currentUserId?.let { uid ->
+            val db = FirebaseFirestore.getInstance()
+            db.collection("usuarios").document(uid).get()
+                .addOnSuccessListener { doc ->
+                    val puntos = doc.getLong("puntos") ?: 0
+                    findViewById<TextView>(R.id.tvPointsCount)?.text = "$puntos Pts"
+                }
 
-            // Actualizar impacto circular (conteo de aportes)
-            val conteoAportes = dbHelper.obtenerConteoAportes(currentUserId)
-            val tvImpactDesc = findViewById<TextView>(R.id.tvImpactDesc)
-            
-            if (conteoAportes == 1) {
-                tvImpactDesc.text = "1 Uniforme reciclado"
-            } else {
-                tvImpactDesc.text = "$conteoAportes Uniformes reciclados"
-            }
+            // Actualizar impacto circular (conteo de aportes exitosos)
+            db.collection("prendas")
+                .whereEqualTo("vendedorId", uid)
+                .get()
+                .addOnSuccessListener { result ->
+                    val conteoAportes = result.size()
+                    val tvImpactDesc = findViewById<TextView>(R.id.tvImpactDesc)
+                    tvImpactDesc.text = if (conteoAportes == 1) "1 Uniforme reciclado" else "$conteoAportes Uniformes reciclados"
+                }
         }
     }
     // Cargamos las prendas recientes del catálogo y las mostramos en el RecyclerView
     private fun loadRecentProducts() {
-        val cursor = dbHelper.obtenerCatalogo()
-        val products = mutableListOf<Prenda>()
-        if (cursor.moveToFirst()) {
-            do {
-                val estado = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO))
-                
-                // MEJORA 3: Solo agregar a "Recién Llegados" si NO ha sido canjeada y NO está observada
-                if (estado != "CANJEADO" && estado != "OBSERVADA") {
-                    products.add(Prenda(
-                        cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID)),
-                        cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_USUARIO)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TITULO)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_DESCRIPCION)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_CARRERA)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TALLA)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_GENERO)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TIPO)),
-                        cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_PUNTOS)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_IMAGEN)),
-                        estado,
-                        if (cursor.isNull(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR))) null
-                        else cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO_FISICO))
-                    ))
+        FirebaseFirestore.getInstance().collection("prendas")
+            .orderBy("fechaCreacion", Query.Direction.DESCENDING)
+            .limit(10)
+            .get()
+            .addOnSuccessListener { result ->
+                val products = result.mapNotNull { doc ->
+                    val estado = doc.getString("estadoPublicacion") ?: "DISPONIBLE"
+                    if (estado != "CANJEADO" && estado != "OBSERVADA") {
+                        Prenda(
+                            id = doc.id,
+                            idUsuario = doc.getString("vendedorId") ?: "",
+                            titulo = doc.getString("titulo") ?: "",
+                            descripcion = doc.getString("descripcion") ?: "",
+                            carrera = doc.getString("carrera") ?: "",
+                            talla = doc.getString("talla") ?: "",
+                            genero = doc.getString("genero") ?: "",
+                            tipoTransaccion = doc.getString("tipo") ?: "",
+                            puntos = doc.getLong("puntos")?.toInt() ?: 0,
+                            imagenUri = doc.getString("urlImagen"),
+                            estado = estado,
+                            idReceptor = doc.getString("receptorId"),
+                            estadoFisico = doc.getString("estadoFisico") ?: "Usado"
+                        )
+                    } else null
                 }
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
-        
-        // Mostrar los más recientes primero (los que tengan ID más altos aparecerán al inicio de la lista horizontal)
-        val recentProducts = products.take(10)
-        
-        allProducts = products
-        adapter.updateList(recentProducts)
+                allProducts = products
+                adapter.updateList(products)
+            }
     }
 }

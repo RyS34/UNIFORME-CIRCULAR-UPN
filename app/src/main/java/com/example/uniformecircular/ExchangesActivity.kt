@@ -24,11 +24,15 @@ import android.widget.Button
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.bumptech.glide.Glide
+
 class ExchangesActivity : AppCompatActivity() {
 
-    private lateinit var dbHelper: DBHelper
     private lateinit var adapter: MyExchangesAdapter
-    private var currentUserId: Int = -1
+    private var currentUserId: String? = null
     private var currentTab: Int = 0 // 0: Aportes, 1: Adquisiciones
 
     // Configuración de la actividad de intercambios
@@ -37,12 +41,8 @@ class ExchangesActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_exchanges)
-        // Inicializar la base de datos
-        dbHelper = DBHelper(this)
 
-        // Obtener el ID del usuario actual mediante el nombre enviado desde el MainActivity
-        val username = intent.getStringExtra("USER_NAME") ?: "Usuario"
-        currentUserId = dbHelper.obtenerUsuarioId(username)
+        currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
         // Ajustar insets para diseño Edge-to-Edge inmersivo usando el espaciador dinámico
         val rootView = findViewById<View>(R.id.mainExchanges)
@@ -130,12 +130,21 @@ class ExchangesActivity : AppCompatActivity() {
             .setTitle("Confirmar Entrega")
             .setMessage("¿Confirmas que ya entregaste la prenda '${prenda.titulo}'? Esto cerrará el ciclo y otorgará los puntos.")
             .setPositiveButton("Sí, entregada") { _, _ ->
-                if (dbHelper.marcarComoCanjeada(prenda.id)) {
-                    // El dueño de la prenda recibe los puntos correspondientes
-                    dbHelper.sumarPuntosUsuario(prenda.idUsuario, prenda.puntos)
-                    Toast.makeText(this, "¡Canje completado exitosamente! Has ganado ${prenda.puntos} puntos.", Toast.LENGTH_SHORT).show()
-                    loadData()
-                }
+                val firestore = FirebaseFirestore.getInstance()
+                
+                // Marcar como canjeada
+                firestore.collection("prendas").document(prenda.id)
+                    .update("estadoPublicacion", "CANJEADO")
+                    .addOnSuccessListener {
+                        // El dueño de la prenda recibe los puntos correspondientes
+                        firestore.collection("usuarios").document(prenda.idUsuario).get()
+                            .addOnSuccessListener { doc ->
+                                val puntosActuales = doc.getLong("puntos") ?: 0
+                                doc.reference.update("puntos", puntosActuales + prenda.puntos)
+                                Toast.makeText(this, "¡Canje completado exitosamente! Has ganado ${prenda.puntos} puntos.", Toast.LENGTH_SHORT).show()
+                                loadData()
+                            }
+                    }
             }
             .setNegativeButton("Aún no", null)
             .show()
@@ -146,14 +155,28 @@ class ExchangesActivity : AppCompatActivity() {
             .setTitle("Cancelar Reserva")
             .setMessage("¿Deseas cancelar el interés de este estudiante? La prenda volverá a estar disponible para todos en el catálogo.")
             .setPositiveButton("Sí, liberar") { _, _ ->
-                if (dbHelper.cancelarReserva(prenda.id)) {
-                    // Devolver puntos al receptor si existía uno
-                    prenda.idReceptor?.let { receptorId ->
-                        dbHelper.sumarPuntosUsuario(receptorId, prenda.puntos)
+                val firestore = FirebaseFirestore.getInstance()
+                
+                firestore.collection("prendas").document(prenda.id)
+                    .update(mapOf(
+                        "estadoPublicacion" to "DISPONIBLE",
+                        "receptorId" to null
+                    ))
+                    .addOnSuccessListener {
+                        // Devolver puntos al receptor si existía uno
+                        prenda.idReceptor?.let { receptorId ->
+                            firestore.collection("usuarios").document(receptorId).get()
+                                .addOnSuccessListener { doc ->
+                                    val puntosActuales = doc.getLong("puntos") ?: 0
+                                    doc.reference.update("puntos", puntosActuales + prenda.puntos)
+                                    Toast.makeText(this, "Prenda liberada y puntos devueltos al interesado", Toast.LENGTH_SHORT).show()
+                                    loadData()
+                                }
+                        } ?: run {
+                            Toast.makeText(this, "Prenda liberada", Toast.LENGTH_SHORT).show()
+                            loadData()
+                        }
                     }
-                    Toast.makeText(this, "Prenda liberada y puntos devueltos al interesado", Toast.LENGTH_SHORT).show()
-                    loadData()
-                }
             }
             .setNegativeButton("Mantener reserva", null)
             .show()
@@ -179,16 +202,20 @@ class ExchangesActivity : AppCompatActivity() {
         if (currentTab == 0) {
             tvMainTitle.text = "Detalle de mi Aporte"
             val receptorId = prenda.idReceptor
-            if (receptorId != null && receptorId != 0) {
-                val receptorName = dbHelper.obtenerNombreUsuario(receptorId)
-                tvUser.text = receptorName ?: "Interesado ID: $receptorId"
+            if (!receptorId.isNullOrEmpty()) {
+                FirebaseFirestore.getInstance().collection("usuarios").document(receptorId).get()
+                    .addOnSuccessListener { doc ->
+                        tvUser.text = doc.getString("usuario") ?: "Estudiante"
+                    }
             } else {
                 tvUser.text = "Sin reservar"
             }
         } else {
             tvMainTitle.text = "Detalle de mi Canje"
-            val ownerName = dbHelper.obtenerNombreUsuario(prenda.idUsuario)
-            tvUser.text = ownerName ?: "Dueño ID: ${prenda.idUsuario}"
+            FirebaseFirestore.getInstance().collection("usuarios").document(prenda.idUsuario).get()
+                .addOnSuccessListener { doc ->
+                    tvUser.text = doc.getString("usuario") ?: "Estudiante"
+                }
         }
         // Configurar detalles de la prenda en el diálogo
         tvTitle.text = prenda.titulo
@@ -212,7 +239,6 @@ class ExchangesActivity : AppCompatActivity() {
                 btnEdit.setOnClickListener {
                     dialog.dismiss()
                     val intent = Intent(this@ExchangesActivity, DeliverActivity::class.java).apply {
-                        putExtra("USER_NAME", dbHelper.obtenerNombreUsuario(currentUserId))
                         putExtra("EDIT_PRENDA_ID", prenda.id)
                     }
                     startActivity(intent)
@@ -244,23 +270,27 @@ class ExchangesActivity : AppCompatActivity() {
         // o podríamos ocultar acciones si no es el dueño. 
         // En este diálogo solo hay un botón de "Cerrar", las acciones están en la tarjeta.
 
-        // Cargar imagen
+        // Cargar imagen de forma dinámica
         val imageUriString = prenda.imagenUri
-        if (imageUriString != null && (imageUriString.startsWith("content://") || imageUriString.startsWith("file://"))) {
-            ivImage.setImageURI(Uri.parse(imageUriString))
-        } else {
-            val imageName = imageUriString?.trim()?.lowercase()
-            val resId = when(imageName) {
-                "chompa_upn" -> R.drawable.chompa_upn
-                "pantalon_upn" -> R.drawable.pantalon_upn
-                "bata_upn" -> R.drawable.bata_upn
-                "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                else -> if (!imageName.isNullOrEmpty()) {
-                    resources.getIdentifier(imageName, "drawable", packageName)
-                } else 0
+        if (!imageUriString.isNullOrEmpty()) {
+            if (imageUriString.startsWith("http")) {
+                Glide.with(this).load(imageUriString).into(ivImage)
+            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
+                ivImage.setImageURI(Uri.parse(imageUriString))
+            } else {
+                val imageName = imageUriString.trim().lowercase()
+                val resId = when(imageName) {
+                    "chompa_upn" -> R.drawable.chompa_upn
+                    "pantalon_upn" -> R.drawable.pantalon_upn
+                    "bata_upn" -> R.drawable.bata_upn
+                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                    else -> resources.getIdentifier(imageName, "drawable", packageName)
+                }
+                if (resId != 0) ivImage.setImageResource(resId)
+                else ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
             }
-            if (resId != 0) ivImage.setImageResource(resId)
-            else ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+        } else {
+            ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
         }
 
         btnClose.setOnClickListener { dialog.dismiss() }
@@ -284,102 +314,96 @@ class ExchangesActivity : AppCompatActivity() {
             .setTitle("Eliminar Aporte")
             .setMessage("¿Estás seguro de que deseas eliminar esta prenda? Se quitará del catálogo público.")
             .setPositiveButton("Eliminar") { _, _ ->
+                val firestore = FirebaseFirestore.getInstance()
+                
                 // Si la prenda estaba reservada (EN PROCESO), devolvemos los puntos al receptor
                 if (prenda.estado == "EN PROCESO") {
                     prenda.idReceptor?.let { receptorId ->
-                        dbHelper.sumarPuntosUsuario(receptorId, prenda.puntos)
+                        firestore.collection("usuarios").document(receptorId).get()
+                            .addOnSuccessListener { doc ->
+                                val puntosActuales = doc.getLong("puntos") ?: 0
+                                doc.reference.update("puntos", puntosActuales + prenda.puntos)
+                            }
                     }
                 }
 
-                if (dbHelper.eliminarPrenda(prenda.id)) {
-                    val msg = if (prenda.estado == "EN PROCESO") 
-                        "Prenda eliminada y puntos devueltos al interesado" 
-                    else "Prenda eliminada correctamente"
-                    
-                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                    loadData()
-                }
+                firestore.collection("prendas").document(prenda.id).delete()
+                    .addOnSuccessListener {
+                        val msg = if (prenda.estado == "EN PROCESO") 
+                            "Prenda eliminada y puntos devueltos al interesado" 
+                        else "Prenda eliminada correctamente"
+                        
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                        loadData()
+                    }
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
-    // Cargamos los datos desde la base de datos y los mostramos en el RecyclerView
+    // Cargamos los datos desde Firestore y los mostramos en el RecyclerView
     private fun loadData() {
-        val cursor = dbHelper.obtenerCatalogo()
-        val products = mutableListOf<Prenda>()
+        currentUserId?.let { uid ->
+            val query = if (currentTab == 0) {
+                FirebaseFirestore.getInstance().collection("prendas")
+                    .whereEqualTo("vendedorId", uid)
+            } else {
+                FirebaseFirestore.getInstance().collection("prendas")
+                    .whereEqualTo("receptorId", uid)
+            }
 
-        if (cursor.moveToFirst()) {
-            do {
-                val userIdPrenda = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_USUARIO))
-                val receptorId = cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR))
-                
-                val shouldAdd = if (currentTab == 0) {
-                    userIdPrenda == currentUserId // Mis Aportes
-                } else {
-                    receptorId == currentUserId // Mis Adquisiciones
-                }
-
-                if (shouldAdd) {
-                    products.add(
-                        Prenda(
-                            cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID)),
-                            userIdPrenda,
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TITULO)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_DESCRIPCION)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_CARRERA)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TALLA)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_GENERO)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TIPO)),
-                            cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_PUNTOS)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_IMAGEN)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO)),
-                            if (cursor.isNull(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR))) null 
-                            else receptorId,
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO_FISICO)),
-                            cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_OBSERVACION))
-                        )
+            query.get().addOnSuccessListener { result ->
+                val products = result.map { doc ->
+                    Prenda(
+                        id = doc.id,
+                        idUsuario = doc.getString("vendedorId") ?: "",
+                        titulo = doc.getString("titulo") ?: "",
+                        descripcion = doc.getString("descripcion") ?: "",
+                        carrera = doc.getString("carrera") ?: "",
+                        talla = doc.getString("talla") ?: "",
+                        genero = doc.getString("genero") ?: "",
+                        tipoTransaccion = doc.getString("tipo") ?: "",
+                        puntos = doc.getLong("puntos")?.toInt() ?: 0,
+                        imagenUri = doc.getString("urlImagen"),
+                        estado = doc.getString("estadoPublicacion") ?: "DISPONIBLE",
+                        idReceptor = doc.getString("receptorId"),
+                        estadoFisico = doc.getString("estadoFisico") ?: "Usado",
+                        observacion = doc.getString("observacion")
                     )
                 }
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
 
-        // Actualizar el adaptador con los nuevos datos y ejecutar la animación
-        adapter.updateList(products)
-        
-        // Ejecutar animación de la lista cada vez que se filtran/cambian datos
-        val recyclerView = findViewById<RecyclerView>(R.id.rvExchanges)
-        recyclerView.scheduleLayoutAnimation()
+                adapter.updateList(products)
+                findViewById<RecyclerView>(R.id.rvExchanges).scheduleLayoutAnimation()
 
-        // Actualizar UI según la pestaña
-        val tvTotal = findViewById<TextView>(R.id.tvTotalContributions)
-        val layoutSummary = findViewById<LinearLayout>(R.id.layoutSummary)
-        val tvEmptyTitle = findViewById<TextView>(R.id.tvEmptyTitle)
-        val tvEmptyDesc = findViewById<TextView>(R.id.tvEmptyDesc)
-        
-        if (currentTab == 0) {
-            layoutSummary.visibility = View.VISIBLE
-            tvTotal.text = if (products.size == 1) getString(R.string.label_contribution_single) 
-                           else getString(R.string.label_contribution_count, products.size)
-            tvEmptyTitle.setText(R.string.exchanges_empty_title)
-            tvEmptyDesc.setText(R.string.exchanges_empty_desc)
-        } else {
-            layoutSummary.visibility = View.GONE
-            tvEmptyTitle.setText(R.string.exchanges_empty_acquisitions_title)
-            tvEmptyDesc.setText(R.string.exchanges_empty_acquisitions_desc)
+                // Actualizar UI
+                val tvTotal = findViewById<TextView>(R.id.tvTotalContributions)
+                val layoutSummary = findViewById<LinearLayout>(R.id.layoutSummary)
+                val tvEmptyTitle = findViewById<TextView>(R.id.tvEmptyTitle)
+                val tvEmptyDesc = findViewById<TextView>(R.id.tvEmptyDesc)
+                
+                if (currentTab == 0) {
+                    layoutSummary.visibility = View.VISIBLE
+                    tvTotal.text = if (products.size == 1) getString(R.string.label_contribution_single) 
+                                   else getString(R.string.label_contribution_count, products.size)
+                    tvEmptyTitle.setText(R.string.exchanges_empty_title)
+                    tvEmptyDesc.setText(R.string.exchanges_empty_desc)
+                } else {
+                    layoutSummary.visibility = View.GONE
+                    tvEmptyTitle.setText(R.string.exchanges_empty_acquisitions_title)
+                    tvEmptyDesc.setText(R.string.exchanges_empty_acquisitions_desc)
+                }
+                
+                findViewById<LinearLayout>(R.id.layoutEmptyState).visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
+            }
         }
-        // Mostrar/ocultar layout de datos vacíos según la lista
-        val layoutEmptyState = findViewById<LinearLayout>(R.id.layoutEmptyState)
-        layoutEmptyState.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun corregirPrendaDirectamente(idPrenda: Int) {
-        if (dbHelper.corregirPrenda(idPrenda)) {
-            Toast.makeText(this, "Publicación corregida y enviada para revisión", Toast.LENGTH_SHORT).show()
-            loadData() // Recargar la lista inmediatamente
-        } else {
-            Toast.makeText(this, "Error al guardar los cambios", Toast.LENGTH_SHORT).show()
-        }
+    private fun corregirPrendaDirectamente(idPrenda: String) {
+        FirebaseFirestore.getInstance().collection("prendas").document(idPrenda)
+            .update("estadoPublicacion", "DISPONIBLE")
+            .addOnSuccessListener {
+                Toast.makeText(this, "Publicación corregida y enviada para revisión", Toast.LENGTH_SHORT).show()
+                loadData()
+            }
     }
 }
 

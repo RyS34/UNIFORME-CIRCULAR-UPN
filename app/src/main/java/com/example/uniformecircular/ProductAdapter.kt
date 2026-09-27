@@ -7,6 +7,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class ProductAdapter(
     private var productList: List<Prenda>,
@@ -51,27 +52,25 @@ class ProductAdapter(
         // Cargar imagen dinámicamente
         val imageUriString = product.imagenUri
         
-        if (imageUriString != null && (imageUriString.startsWith("content://") || imageUriString.startsWith("file://"))) {
-            // Es una foto real de la galería
-            holder.ivProductImage.setImageURI(android.net.Uri.parse(imageUriString))
-        } else {
-            // Es una imagen de prueba (recurso drawable)
-            val imageName = imageUriString?.trim()?.lowercase()
-            val resId = when(imageName) {
-                "chompa_upn" -> R.drawable.chompa_upn
-                "pantalon_upn" -> R.drawable.pantalon_upn
-                "bata_upn" -> R.drawable.bata_upn
-                "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                else -> if (!imageName.isNullOrEmpty()) {
-                    context.resources.getIdentifier(imageName, "drawable", context.packageName)
-                } else 0
-            }
-
-            if (resId != 0) {
-                holder.ivProductImage.setImageResource(resId)
+        if (!imageUriString.isNullOrEmpty()) {
+            if (imageUriString.startsWith("http")) {
+                Glide.with(context).load(imageUriString).into(holder.ivProductImage)
+            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
+                holder.ivProductImage.setImageURI(android.net.Uri.parse(imageUriString))
             } else {
-                holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                val imageName = imageUriString.trim().lowercase()
+                val resId = when(imageName) {
+                    "chompa_upn" -> R.drawable.chompa_upn
+                    "pantalon_upn" -> R.drawable.pantalon_upn
+                    "bata_upn" -> R.drawable.bata_upn
+                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                    else -> context.resources.getIdentifier(imageName, "drawable", context.packageName)
+                }
+                if (resId != 0) holder.ivProductImage.setImageResource(resId)
+                else holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)
             }
+        } else {
+            holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)
         }
 
         // Acción al hacer clic en la tarjeta o en el botón +

@@ -11,6 +11,8 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
@@ -19,7 +21,6 @@ import android.view.View
 
 class NuevoRegistro : AppCompatActivity() {
 
-    private lateinit var dbHelper: DBHelper
     private lateinit var tilUsuario: TextInputLayout
     private lateinit var tilTelefono: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
@@ -38,8 +39,6 @@ class NuevoRegistro : AppCompatActivity() {
             findViewById<View>(R.id.linearLayoutBottom).setPadding(0, 0, 0, systemBars.bottom)
             insets
         }
-
-        dbHelper = DBHelper(this)
 
         val etUsuario = findViewById<EditText>(R.id.usuario)
         val etTelefono = findViewById<EditText>(R.id.telefono)
@@ -151,18 +150,49 @@ class NuevoRegistro : AppCompatActivity() {
 
             if (!isValid) return@setOnClickListener
 
-            // Si todo es válido, intentar insertar
-            val insertado = dbHelper.insertarUsuario(user, pass, phone)
-            if (insertado) {
-                if (user.trim().lowercase() == "admin") {
-                    Toast.makeText(this, "¡Registro de Administrador exitoso!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, R.string.success_registration, Toast.LENGTH_SHORT).show()
+            // --- LÓGICA DE FIREBASE ---
+            val mAuth = FirebaseAuth.getInstance()
+            val db = FirebaseFirestore.getInstance()
+            val emailFicticio = "$user@upn.pe"
+
+            // 1. Crear usuario en Auth
+            mAuth.createUserWithEmailAndPassword(emailFicticio, pass)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val userId = mAuth.currentUser?.uid
+                        val isAdminUser = user.lowercase() == "admin"
+                        val datosUsuario = hashMapOf(
+                            "usuario" to user,
+                            "telefono" to phone,
+                            "puntos" to if (isAdminUser) 0 else 100, // Bono de bienvenida: 100 puntos para usuarios normales, 0 para admin
+                            "rol" to if (isAdminUser) "ADMIN" else "USER"
+                        )
+
+                        // 2. Guardar datos adicionales en Firestore
+                        if (userId != null) {
+                            db.collection("usuarios").document(userId)
+                                .set(datosUsuario)
+                                .addOnSuccessListener {
+                                    if (isAdminUser) {
+                                        Toast.makeText(this, "¡Administrador registrado en la nube!", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(this, "¡Registro exitoso! Recibiste 100 puntos.", Toast.LENGTH_SHORT).show()
+                                    }
+                                    regresarAlLogin()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(this, "Error Firestore: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                    } else {
+                        val errorMsg = task.exception?.message ?: "Error desconocido"
+                        if (errorMsg.contains("already in use")) {
+                            tilUsuario.error = "El nombre de usuario ya existe"
+                        } else {
+                            Toast.makeText(this, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
-                regresarAlLogin()
-            } else {
-                tilUsuario.error = getString(R.string.error_registration_failed)
-            }
         }
 
         btnVolverLogin.setOnClickListener { regresarAlLogin() }

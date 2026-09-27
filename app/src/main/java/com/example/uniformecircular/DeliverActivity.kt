@@ -19,18 +19,22 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.bumptech.glide.Glide
+
 class DeliverActivity : AppCompatActivity() {
     
-    private lateinit var dbHelper: DBHelper
-    private var currentUserId: Int = -1
+    private var currentUserId: String? = null
     private var selectedImageUri: Uri? = null
     private var cameraImageUri: Uri? = null
-    private var editPrendaId: Int = -1
+    private var editPrendaId: String? = null
 
     // Selector de imágenes de la galería
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -63,14 +67,11 @@ class DeliverActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_deliver)
 
-        dbHelper = DBHelper(this)
+        // Obtener ID del usuario actual desde Firebase
+        currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
-        // Obtener ID del usuario actual
-        val username = intent.getStringExtra("USER_NAME") ?: ""
-        currentUserId = dbHelper.obtenerUsuarioId(username)
-
-        // Verificar si estamos en modo edición
-        editPrendaId = intent.getIntExtra("EDIT_PRENDA_ID", -1)
+        // Verificar si estamos en modo edición (ahora es un String de Firestore)
+        editPrendaId = intent.getStringExtra("EDIT_PRENDA_ID")
 
         setupInsets()
         setupSpinner()
@@ -109,88 +110,42 @@ class DeliverActivity : AppCompatActivity() {
         // Configurar listeners para actualización de puntos en tiempo real
         setupPointsListeners()
 
-        if (editPrendaId != -1) {
-            cargarDatosPrenda(editPrendaId)
+        if (editPrendaId != null) {
+            cargarDatosPrenda(editPrendaId!!)
         }
     }
-    // Carga los datos de la prenda a editar en la UI de edición de prenda
-    private fun cargarDatosPrenda(idPrenda: Int) {
-        // Cambiar textos de la UI para modo edición
+    // Carga los datos de la prenda a editar desde Firestore
+    private fun cargarDatosPrenda(idPrenda: String) {
         findViewById<TextView>(R.id.tvTitle).text = "Editar Publicación"
         findViewById<Button>(R.id.btnSubirPrenda).text = "Guardar Cambios"
 
-        val cursor = dbHelper.readableDatabase.query(
-            DBHelper.TABLE_PRENDAS, null, "${DBHelper.COL_PRENDA_ID} = ?", 
-            arrayOf(idPrenda.toString()), null, null, null
-        )
+        FirebaseFirestore.getInstance().collection("prendas").document(idPrenda)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc.exists()) {
+                    findViewById<TextInputEditText>(R.id.etTitulo).setText(doc.getString("titulo"))
+                    findViewById<TextInputEditText>(R.id.etDescripcion).setText(doc.getString("descripcion"))
+                    
+                    val carrera = doc.getString("carrera")
+                    val spinner = findViewById<Spinner>(R.id.spCarrera)
+                    val adapter = spinner.adapter as? ArrayAdapter<String>
+                    val carreraPos = adapter?.getPosition(carrera) ?: -1
+                    if (carreraPos >= 0) spinner.setSelection(carreraPos)
 
-        if (cursor.moveToFirst()) {
-            val titulo = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TITULO))
-            val descripcion = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_DESCRIPCION))
-            val carrera = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_CARRERA))
-            val talla = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TALLA))
-            val genero = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_GENERO))
-            val tipo = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TIPO))
-            val imagenUriStr = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_IMAGEN))
-            val estadoFisico = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO_FISICO))
-
-            findViewById<TextInputEditText>(R.id.etTitulo).setText(titulo)
-            findViewById<TextInputEditText>(R.id.etDescripcion).setText(descripcion)
-
-            // Spinner Carrera
-            val spinner = findViewById<Spinner>(R.id.spCarrera)
-            val adapter = spinner.adapter as? ArrayAdapter<String>
-            val carreraPos = adapter?.getPosition(carrera) ?: -1
-            if (carreraPos >= 0) spinner.setSelection(carreraPos)
-
-            // Chips Talla
-            val cgTalla = findViewById<ChipGroup>(R.id.cgTalla)
-            for (i in 0 until cgTalla.childCount) {
-                val chip = cgTalla.getChildAt(i) as Chip
-                if (chip.text.toString() == talla) {
-                    chip.isChecked = true
-                    break
+                    val imagenUrl = doc.getString("urlImagen")
+                    if (!imagenUrl.isNullOrEmpty()) {
+                        val ivPreview = findViewById<ImageView>(R.id.ivPrendaPreview)
+                        Glide.with(this@DeliverActivity)
+                            .load(imagenUrl)
+                            .centerCrop()
+                            .into(ivPreview)
+                        
+                        // Guardamos la URI para que la validación sepa que ya hay una imagen
+                        selectedImageUri = android.net.Uri.parse(imagenUrl)
+                    }
+                    actualizarResumenPuntos()
                 }
             }
-
-            // Chips Genero
-            val cgGenero = findViewById<ChipGroup>(R.id.cgGenero)
-            for (i in 0 until cgGenero.childCount) {
-                val chip = cgGenero.getChildAt(i) as Chip
-                if (chip.text.toString() == genero) {
-                    chip.isChecked = true
-                    break
-                }
-            }
-
-            // Chips Estado Físico
-            val cgEstado = findViewById<ChipGroup>(R.id.cgEstadoFisico)
-            for (i in 0 until cgEstado.childCount) {
-                val chip = cgEstado.getChildAt(i) as Chip
-                if (chip.text.toString() == estadoFisico) {
-                    chip.isChecked = true
-                    break
-                }
-            }
-
-            // Chips Tipo
-            val cgTipo = findViewById<ChipGroup>(R.id.cgTipo)
-            for (i in 0 until cgTipo.childCount) {
-                val chip = cgTipo.getChildAt(i) as Chip
-                if (chip.text.toString() == tipo) {
-                    chip.isChecked = true
-                    break
-                }
-            }
-
-            // Imagen
-            if (!imagenUriStr.isNullOrEmpty()) {
-                val uri = Uri.parse(imagenUriStr)
-                actualizarPreview(uri)
-            }
-        }
-        cursor.close()
-        actualizarResumenPuntos()
     }
     // Actualiza el resumen de puntos en tiempo real al cambiar el estado físico o la modalidad
     private fun setupPointsListeners() {
@@ -361,76 +316,75 @@ class DeliverActivity : AppCompatActivity() {
             return
         }
 
-        if (currentUserId == -1) {
-            Toast.makeText(this, "Error: Usuario no identificado", Toast.LENGTH_SHORT).show()
+        if (currentUserId == null) {
+            Toast.makeText(this, "Error: Inicia sesión nuevamente", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Guardar la imagen localmente en el almacenamiento interno para evitar la pérdida de permisos de la Uri de la galería
-        val rutaImagenLocal = guardarImagenEnAlmacenamientoInterno(selectedImageUri!!)
-        if (rutaImagenLocal == null) {
-            Toast.makeText(this, "Error al procesar la imagen seleccionada", Toast.LENGTH_SHORT).show()
-            return
-        }
+        // --- MIGRACIÓN A FIREBASE ---
+        val btnSubir = findViewById<Button>(R.id.btnSubirPrenda)
+        btnSubir.isEnabled = false
+        btnSubir.text = "Subiendo..."
 
-        // --- LÓGICA DE PUNTOS DINÁMICA ---
-        // Puntos base por condición física
-        val puntosBaseCondicion = when (selectedEstadoId) {
-            R.id.chipNuevo -> 20
-            R.id.chipSeminuevo -> 10
-            else -> 0 // chipUsado
-        }
+        val storageRef = FirebaseStorage.getInstance().reference
+        val fotoRef = storageRef.child("prendas/${System.currentTimeMillis()}.jpg")
 
-        // Puntos por modalidad (Base)
-        // Guardamos valores internos consistentes en la DB: "Intercambio", "Donación", "Venta"
-        val (tipoDB, puntosBaseModalidad) = when (selectedTipoId) {
-            R.id.chipDonacion -> "Donación" to 0
-            R.id.chipVenta -> "Venta" to 30
-            else -> "Intercambio" to 50
-        }
+        // 1. Subir imagen a Storage
+        fotoRef.putFile(selectedImageUri!!)
+            .addOnSuccessListener {
+                fotoRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    // 2. Preparar datos para Firestore
+                    val (tipoDB, puntosBaseModalidad) = when (selectedTipoId) {
+                        R.id.chipDonacion -> "Donación" to 0
+                        R.id.chipVenta -> "Venta" to 30
+                        else -> "Intercambio" to 50
+                    }
+                    val puntosCalculados = if (tipoDB == "Donación") 0 else puntosBaseModalidad + when (selectedEstadoId) {
+                        R.id.chipNuevo -> 20
+                        R.id.chipSeminuevo -> 10
+                        else -> 0
+                    }
 
-        // Si es donación, siempre es 0 puntos independientemente del estado
-        val puntosCalculados = if (tipoDB == "Donación") 0 else puntosBaseModalidad + puntosBaseCondicion
+                    val prendaData = hashMapOf(
+                        "vendedorId" to currentUserId,
+                        "titulo" to titulo,
+                        "descripcion" to descripcion,
+                        "carrera" to carrera,
+                        "talla" to talla,
+                        "genero" to genero,
+                        "tipo" to tipoDB,
+                        "puntos" to puntosCalculados,
+                        "urlImagen" to downloadUri.toString(),
+                        "estadoFisico" to estadoFisico,
+                        "estadoPublicacion" to "DISPONIBLE",
+                        "fechaCreacion" to com.google.firebase.Timestamp.now()
+                    )
 
-        // Guardamos la URI persistente de la imagen local como String
-        val exito = if (editPrendaId == -1) {
-            dbHelper.insertarPrenda(
-                currentUserId,
-                titulo,
-                descripcion,
-                carrera,
-                talla,
-                genero,
-                tipoDB,
-                puntos = puntosCalculados,
-                imagen = rutaImagenLocal,
-                estadoFisico = estadoFisico
-            )
-        } else {
-            dbHelper.actualizarPrenda(
-                editPrendaId,
-                titulo,
-                descripcion,
-                carrera,
-                talla,
-                genero,
-                tipoDB,
-                puntos = puntosCalculados,
-                imagen = rutaImagenLocal,
-                estadoFisico = estadoFisico
-            )
-        }
+                    // 3. Guardar en Firestore
+                    val firestore = FirebaseFirestore.getInstance()
+                    val docRef = if (editPrendaId == null) {
+                        firestore.collection("prendas").document()
+                    } else {
+                        firestore.collection("prendas").document(editPrendaId!!)
+                    }
 
-        if (exito) {
-            val mensaje = if (editPrendaId == -1) 
-                "¡Prenda publicada! Ganarás los puntos cuando confirmes la entrega física." 
-            else "Publicación actualizada correctamente."
-            
-            Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show()
-            finish()
-        } else {
-            Toast.makeText(this, "Error al procesar la prenda", Toast.LENGTH_SHORT).show()
-        }
+                    docRef.set(prendaData)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "¡Publicado en la nube!", Toast.LENGTH_LONG).show()
+                            finish()
+                        }
+                        .addOnFailureListener {
+                            btnSubir.isEnabled = true
+                            btnSubir.text = "Intentar de nuevo"
+                            Toast.makeText(this, "Error Firestore: ${it.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            }
+            .addOnFailureListener {
+                btnSubir.isEnabled = true
+                btnSubir.text = "Intentar de nuevo"
+                Toast.makeText(this, "Error al subir foto: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
     }
     // Guarda la imagen seleccionada en el almacenamiento interno de la aplicación y devuelve su URI
     private fun guardarImagenEnAlmacenamientoInterno(uri: Uri): String? {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "365907922775",
+    "project_id": "uniforme-circular-upn",
+    "storage_bucket": "uniforme-circular-upn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365907922775:android:30b3995c17a5dc5c93f812",
+        "android_client_info": {
+          "package_name": "com.example.uniformecircular"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbmLyv7RM8Ectn_TvVPEGip740hhKFPnY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

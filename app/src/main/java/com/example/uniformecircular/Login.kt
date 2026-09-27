@@ -17,6 +17,8 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import androidx.core.content.edit
 
 class Login : AppCompatActivity() {
@@ -29,7 +31,6 @@ class Login : AppCompatActivity() {
     private lateinit var tilPassword: TextInputLayout
     private lateinit var cbRememberMe: CheckBox
     private lateinit var tvForgotPassword: TextView
-    private lateinit var dbHelper: DBHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -47,8 +48,6 @@ class Login : AppCompatActivity() {
             findViewById<View>(R.id.linearLayoutBottom).setPadding(0, 0, 0, systemBars.bottom)
             insets
         }
-        // ===== INSTANCIA DE LA BASE DE DATOS =====
-        dbHelper = DBHelper(this)
 
         // ===== VINCULACIÓN DE COMPONENTES DE LA INTERFAZ (UI) =====
         etUsuario = findViewById(R.id.usuario)
@@ -71,16 +70,20 @@ class Login : AppCompatActivity() {
             etPassword.setText(savedPass)
             cbRememberMe.isChecked = true
 
-            // Validar de forma transparente e ingresar automáticamente
-            if (dbHelper.verificarUsuario(savedUser, savedPass)) {
-                val intent = Intent(this, MainActivity::class.java).apply {
-                    putExtra("USER_NAME", savedUser)
+            // Validar con Firebase de forma transparente
+            val emailFicticio = "$savedUser@upn.pe"
+            FirebaseAuth.getInstance().signInWithEmailAndPassword(emailFicticio, savedPass)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val intent = Intent(this, MainActivity::class.java).apply {
+                            putExtra("USER_NAME", savedUser)
+                        }
+                        val options = ActivityOptions.makeSceneTransitionAnimation(this, findViewById(R.id.imgLogoContainer), "logo_shared")
+                        startActivity(intent, options.toBundle())
+                        finish()
+                    }
                 }
-                val options = ActivityOptions.makeSceneTransitionAnimation(this, findViewById(R.id.imgLogoContainer), "logo_shared")
-                startActivity(intent, options.toBundle())
-                finish()
-                return // Detener la inicialización normal, ya que cambiamos de actividad
-            }
+            return
         } else if (isRemembered && !savedUser.isNullOrEmpty()) {
             etUsuario.setText(savedUser)
             cbRememberMe.isChecked = true
@@ -173,38 +176,40 @@ class Login : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Intentar iniciar sesión
-            if (dbHelper.verificarUsuario(user, pass)) {
-                // Guardar o limpiar preferencia de recordar usuario y contraseña para inicio automático
-                sharedPreferences.edit {
-                    if (cbRememberMe.isChecked) {
-                        putString("saved_username", user)
-                        putString("saved_password", pass)
-                        putBoolean("remember_me", true)
+            // --- LÓGICA DE LOGIN CON FIREBASE ---
+            val mAuth = FirebaseAuth.getInstance()
+            val emailFicticio = "${user.trim()}@upn.pe"
+
+            mAuth.signInWithEmailAndPassword(emailFicticio, pass)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        // Guardar o limpiar preferencia de recordar
+                        sharedPreferences.edit {
+                            if (cbRememberMe.isChecked) {
+                                putString("saved_username", user)
+                                putString("saved_password", pass)
+                                putBoolean("remember_me", true)
+                            } else {
+                                clear()
+                            }
+                        }
+
+                        // Ir a la pantalla principal
+                        val intent = Intent(this, MainActivity::class.java).apply {
+                            putExtra("USER_NAME", user)
+                        }
+                        val options = ActivityOptions.makeSceneTransitionAnimation(this, findViewById(R.id.imgLogoContainer), "logo_shared")
+                        startActivity(intent, options.toBundle())
+                        finish()
                     } else {
-                        clear()
+                        val errorMsg = task.exception?.message ?: ""
+                        if (errorMsg.contains("user-not-found") || errorMsg.contains("invalid-credential")) {
+                            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
-
-                // Ir a la pantalla principal
-                val intent = Intent(this, MainActivity::class.java).apply {
-                    putExtra("USER_NAME", user)
-                }
-                val options = ActivityOptions.makeSceneTransitionAnimation(this, findViewById(R.id.imgLogoContainer), "logo_shared")
-                startActivity(intent, options.toBundle())
-                finish()
-            } else {
-                // Validación diferenciada para mostrar un mensaje profesional al usuario
-                if (!dbHelper.existeUsuario(user)) {
-                    // Si el nombre de usuario no está en la base de datos
-                    tilUsuario.error = getString(R.string.username_incorrect_error)
-                    etUsuario.requestFocus()
-                } else {
-                    // Si el usuario existe, pero la contraseña está mal
-                    tilPassword.error = getString(R.string.password_incorrect_error)
-                    etPassword.requestFocus()
-                }
-            }
         }
         //Pulsación botón nuevo registro
         btnNuevoRegistro.setOnClickListener {
@@ -226,54 +231,33 @@ class Login : AppCompatActivity() {
             .create()
 
         val etUser = dialogView.findViewById<TextInputEditText>(R.id.etUserRecup)
-        val etPhone = dialogView.findViewById<TextInputEditText>(R.id.etPhoneRecup)
         val tilUser = dialogView.findViewById<TextInputLayout>(R.id.tilUserRecup)
-        val tilPhone = dialogView.findViewById<TextInputLayout>(R.id.tilPhoneRecup)
         val btnValidar = dialogView.findViewById<Button>(R.id.btnValidarRecuperacion)
         val btnCancelar = dialogView.findViewById<Button>(R.id.btnCancelarRecuperacion)
+        
+        // Ocultar campo de teléfono ya que Firebase usa el correo (usuario)
+        dialogView.findViewById<TextInputLayout>(R.id.tilPhoneRecup).visibility = View.GONE
 
         btnCancelar.setOnClickListener { dialog.dismiss() }
 
         btnValidar.setOnClickListener {
             val user = etUser.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
 
             if (user.isEmpty()) {
                 tilUser.error = "Ingresa tu usuario"
                 return@setOnClickListener
             }
-            if (phone.isEmpty()) {
-                tilPhone.error = "Ingresa tu teléfono"
-                return@setOnClickListener
-            }
 
-            val passwordEncontrada = dbHelper.recuperarPassword(user, phone)
-
-            if (passwordEncontrada != null) {
-                dialog.dismiss()
-                
-                // Mostrar la clave en un diseño premium personalizado con opción de ojo (ver/ocultar)
-                val viewClave = layoutInflater.inflate(R.layout.dialog_clave_recuperada, null)
-                val dialogClave = MaterialAlertDialogBuilder(this@Login)
-                    .setView(viewClave)
-                    .create()
-
-                val etClave = viewClave.findViewById<TextInputEditText>(R.id.etClaveRecuperada)
-                val btnEntendido = viewClave.findViewById<Button>(R.id.btnEntendidoClave)
-
-                // Seteamos la contraseña recuperada real en el campo
-                etClave.setText(passwordEncontrada)
-
-                btnEntendido.setOnClickListener {
-                    etUsuario.setText(user)
-                    etPassword.setText(passwordEncontrada)
-                    dialogClave.dismiss()
+            val emailFicticio = "$user@upn.pe"
+            FirebaseAuth.getInstance().sendPasswordResetEmail(emailFicticio)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(this, "Se envió un enlace de recuperación a tu correo institucional ($emailFicticio)", Toast.LENGTH_LONG).show()
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
-
-                dialogClave.show()
-            } else {
-                Toast.makeText(this, "Datos incorrectos. Verifica tu usuario o teléfono.", Toast.LENGTH_LONG).show()
-            }
         }
 
         dialog.show()

@@ -21,12 +21,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 
 import android.view.animation.AnimationUtils
+import com.bumptech.glide.Glide
 
 class CatalogActivity : AppCompatActivity() {
 
-    private lateinit var dbHelper: DBHelper
     private lateinit var adapter: ProductAdapter
     private var allProducts: List<Prenda> = listOf()
     
@@ -35,7 +38,8 @@ class CatalogActivity : AppCompatActivity() {
     private var selectedGenero: String = "Todos"
     private var searchText: String = ""
 
-    private var currentUserId: Int = -1
+    private var currentUserId: String? = null
+    private var currentRol: String = "USER"
 
     // Configuración inicial de la actividad
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,9 +48,16 @@ class CatalogActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_catalog)
 
-        dbHelper = DBHelper(this)
-        val userName = intent.getStringExtra("USER_NAME") ?: "Usuario"
-        currentUserId = dbHelper.obtenerUsuarioId(userName)
+        currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        
+        // Obtener rol del usuario actual desde Firestore
+        currentUserId?.let { uid ->
+            FirebaseFirestore.getInstance().collection("usuarios").document(uid)
+                .get()
+                .addOnSuccessListener { doc ->
+                    currentRol = doc.getString("rol") ?: "USER"
+                }
+        }
 
         // Ajustar insets para diseño Edge-to-Edge inmersivo usando el espaciador dinámico
         val rootView = findViewById<View>(R.id.mainCatalog)
@@ -65,14 +76,6 @@ class CatalogActivity : AppCompatActivity() {
                 systemBars.bottom
             )
             insets
-        }
-        // Inicializamos la base de datos
-        dbHelper = DBHelper(this)
-
-        // Sincronizar número de admin por si cambió en el código
-        val miNumeroReal = "927672725"
-        if (dbHelper.existeUsuario("admin")) {
-            dbHelper.actualizarTelefonoUsuario("admin", miNumeroReal)
         }
 
         // Botón Atrás
@@ -101,8 +104,8 @@ class CatalogActivity : AppCompatActivity() {
         }
 
         // Manejar el foco de búsqueda o producto específico desde el Dashboard
-        val targetPrendaId = intent.getIntExtra("PRENDA_ID", -1)
-        if (targetPrendaId != -1) {
+        val targetPrendaId = intent.getStringExtra("PRENDA_ID")
+        if (targetPrendaId != null) {
             abrirDetallePrendaPorId(targetPrendaId)
         } else if (intent.getBooleanExtra("FOCUS_SEARCH", false)) {
             val etSearch = findViewById<EditText>(R.id.etSearch)
@@ -113,7 +116,7 @@ class CatalogActivity : AppCompatActivity() {
     }
 
     // Abrimos el detalle de un producto por su ID (si existe)
-    private fun abrirDetallePrendaPorId(id: Int) {
+    private fun abrirDetallePrendaPorId(id: String) {
         // Buscamos en la lista cargada (asegurándonos de que ya se cargó en onResume o loadProducts)
         val prenda = allProducts.find { it.id == id }
         prenda?.let { showProductDetail(it) }
@@ -183,8 +186,12 @@ class CatalogActivity : AppCompatActivity() {
         tvPoints.text = getString(R.string.label_points, prenda.puntos)
         tvCategory.text = getString(R.string.label_category_talla_genero, prenda.carrera, prenda.talla, prenda.genero)
         
-        val ownerName = dbHelper.obtenerNombreUsuario(prenda.idUsuario)
-        tvOwner.text = ownerName ?: "Estudiante"
+        // Obtener nombre del dueño desde Firestore
+        FirebaseFirestore.getInstance().collection("usuarios").document(prenda.idUsuario)
+            .get()
+            .addOnSuccessListener { doc ->
+                tvOwner.text = doc.getString("usuario") ?: "Estudiante"
+            }
 
         tvType.text = prenda.tipoTransaccion
         tvEstadoFisico.text = prenda.estadoFisico
@@ -202,8 +209,7 @@ class CatalogActivity : AppCompatActivity() {
         }
 
         // Configuración del botón de contacto y menú de admin
-        val loggedInUsername = dbHelper.obtenerNombreUsuario(currentUserId) ?: ""
-        val isAdmin = loggedInUsername.trim().lowercase() == "admin"
+        val isAdmin = currentRol == "ADMIN"
 
         if (prenda.idUsuario == currentUserId) {
             btnContact.visibility = View.GONE
@@ -238,12 +244,17 @@ class CatalogActivity : AppCompatActivity() {
                     btnConfirm.setOnClickListener {
                         val motivo = etMotivo.text.toString().trim()
                         if (motivo.isNotEmpty()) {
-                            if (dbHelper.observarPrenda(prenda.id, motivo)) {
-                                Toast.makeText(this@CatalogActivity, "OBSERVACIÓN ENVIADA", Toast.LENGTH_SHORT).show()
-                                loadProducts()
-                                customDialog.dismiss()
-                                dialog.dismiss()
-                            }
+                            FirebaseFirestore.getInstance().collection("prendas").document(prenda.id)
+                                .update(mapOf(
+                                    "estadoPublicacion" to "OBSERVADA",
+                                    "observacion" to motivo
+                                ))
+                                .addOnSuccessListener {
+                                    Toast.makeText(this@CatalogActivity, "OBSERVACIÓN ENVIADA", Toast.LENGTH_SHORT).show()
+                                    loadProducts()
+                                    customDialog.dismiss()
+                                    dialog.dismiss()
+                                }
                         } else {
                             etMotivo.error = getString(R.string.error_empty_observation)
                         }
@@ -266,11 +277,13 @@ class CatalogActivity : AppCompatActivity() {
 
                     btnCancel.setOnClickListener { customDialog.dismiss() }
                     btnConfirm.setOnClickListener {
-                        if (dbHelper.eliminarPrenda(prenda.id)) {
-                            loadProducts()
-                            customDialog.dismiss()
-                            dialog.dismiss()
-                        }
+                        FirebaseFirestore.getInstance().collection("prendas").document(prenda.id)
+                            .delete()
+                            .addOnSuccessListener {
+                                loadProducts()
+                                customDialog.dismiss()
+                                dialog.dismiss()
+                            }
                     }
                     customDialog.show()
                 }
@@ -287,27 +300,27 @@ class CatalogActivity : AppCompatActivity() {
             dialog.dismiss()
         }
         
-        // Cargar imagen en el detalle de forma dinámica (soporta tanto imágenes subidas como drawables por defecto)
+        // Cargar imagen en el detalle de forma dinámica
         val imageUriString = prenda.imagenUri
-        if (imageUriString != null && (imageUriString.startsWith("content://") || imageUriString.startsWith("file://"))) {
-            ivImage.setImageURI(android.net.Uri.parse(imageUriString))
-        } else {
-            val imageName = imageUriString?.trim()?.lowercase()
-            val resId = when(imageName) {
-                "chompa_upn" -> R.drawable.chompa_upn
-                "pantalon_upn" -> R.drawable.pantalon_upn
-                "bata_upn" -> R.drawable.bata_upn
-                "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                else -> if (!imageName.isNullOrEmpty()) {
-                    resources.getIdentifier(imageName, "drawable", packageName)
-                } else 0
-            }
-
-            if (resId != 0) {
-                ivImage.setImageResource(resId)
+        if (!imageUriString.isNullOrEmpty()) {
+            if (imageUriString.startsWith("http")) {
+                Glide.with(this).load(imageUriString).into(ivImage)
+            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
+                ivImage.setImageURI(android.net.Uri.parse(imageUriString))
             } else {
-                ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                val imageName = imageUriString.trim().lowercase()
+                val resId = when(imageName) {
+                    "chompa_upn" -> R.drawable.chompa_upn
+                    "pantalon_upn" -> R.drawable.pantalon_upn
+                    "bata_upn" -> R.drawable.bata_upn
+                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                    else -> resources.getIdentifier(imageName, "drawable", packageName)
+                }
+                if (resId != 0) ivImage.setImageResource(resId)
+                else ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
             }
+        } else {
+            ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
         }
 
         // Permitir ver la imagen en grande al hacer clic
@@ -327,79 +340,71 @@ class CatalogActivity : AppCompatActivity() {
 
         // Botón de contacto al hacer clic
         btnContact.setOnClickListener {
-            val telefono = dbHelper.obtenerTelefonoUsuario(prenda.idUsuario)
-            if (!telefono.isNullOrEmpty()) {
-                try {
-                    val currentUsername = intent.getStringExtra("USER_NAME") ?: "Usuario"
-                    val currentUserId = dbHelper.obtenerUsuarioId(currentUsername)
-                    val loggedInUser = dbHelper.obtenerNombreUsuario(currentUserId) ?: ""
-                    val isAdmin = loggedInUser.trim().lowercase() == "admin"
-
-                    val mensaje: String
-                    
-                    if (isAdmin) {
-                        // Flujo ADMIN: Cambiar estado a OBSERVADA para ocultar del catálogo y enviar mensaje
-                        mensaje = getString(R.string.admin_contact_message, prenda.titulo)
-                        dbHelper.observarPrenda(prenda.id, "Publicación bajo supervisión del administrador")
-                        loadProducts()
-                    } else {
-                        // Flujo ESTUDIANTE: Reserva de prenda y gestión de puntos
-                        if (prenda.idUsuario != currentUserId) {
-                            // Verificar si el usuario tiene puntos suficientes para el intercambio
-                            val puntosUsuario = dbHelper.obtenerPuntosUsuario(currentUserId)
-                            if (puntosUsuario < prenda.puntos) {
-                                Toast.makeText(this@CatalogActivity, getString(R.string.error_insufficient_points, prenda.puntos), Toast.LENGTH_SHORT).show()
-                                return@setOnClickListener
-                            }
-                            // Reservamos la prenda en la base de datos
-                            val db = dbHelper.writableDatabase
-                            val values = android.content.ContentValues().apply {
-                                put(DBHelper.COL_PRENDA_ESTADO, "EN PROCESO")
-                                put(DBHelper.COL_PRENDA_ID_RECEPTOR, currentUserId)
-                            }
-                            db.update(DBHelper.TABLE_PRENDAS, values, "${DBHelper.COL_PRENDA_ID} = ?", arrayOf(prenda.id.toString()))
-                            
-                            // Reservamos los puntos del receptor (los restamos ahora)
-                            dbHelper.restarPuntosUsuario(currentUserId, prenda.puntos)
-                        }
-                        mensaje = getString(R.string.contact_message_template, prenda.titulo)
-                    }
-
-                    // Intentamos con la URI nativa de WhatsApp primero
-                    val whatsappUriUri = android.net.Uri.parse("whatsapp://send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}")
-                    val intentNative = android.content.Intent(android.content.Intent.ACTION_VIEW, whatsappUriUri)
-                    
-                    try {
-                        startActivity(intentNative)
-                    } catch (eNative: Exception) {
-                        // Segundo intento: Enlace web tradicional api.whatsapp.com
-                        val webUrl = "https://api.whatsapp.com/send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}"
-                        val intentWeb = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
+            val firestore = FirebaseFirestore.getInstance()
+            firestore.collection("usuarios").document(prenda.idUsuario)
+                .get()
+                .addOnSuccessListener { doc ->
+                    val telefono = doc.getString("telefono")
+                    if (!telefono.isNullOrEmpty()) {
                         try {
-                            startActivity(intentWeb)
-                        } catch (eWeb: Exception) {
-                            // Tercer intento: Enlace wa.me
-                            val waMeUrl = "https://wa.me/51$telefono?text=${android.net.Uri.encode(mensaje)}"
-                            val intentWaMe = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(waMeUrl))
-                            try {
-                                startActivity(intentWaMe)
-                            } catch (eWaMe: Exception) {
-                                // Si todo falla, mostramos el error exacto en pantalla para diagnosticarlo perfectamente
-                                Toast.makeText(
-                                    this, 
-                                    getString(R.string.error_whatsapp_failed, eWaMe.localizedMessage ?: eWaMe.toString()),
-                                    Toast.LENGTH_LONG
-                                ).show()
+                            val isAdmin = currentRol == "ADMIN"
+                            val mensaje: String
+                            
+                            if (isAdmin) {
+                                mensaje = getString(R.string.admin_contact_message, prenda.titulo)
+                                firestore.collection("prendas").document(prenda.id)
+                                    .update(mapOf(
+                                        "estadoPublicacion" to "OBSERVADA",
+                                        "observacion" to "Publicación bajo supervisión del administrador"
+                                    ))
+                                    .addOnSuccessListener { loadProducts() }
+                            } else {
+                                // Flujo ESTUDIANTE: Reserva de prenda y gestión de puntos
+                                currentUserId?.let { uid ->
+                                    firestore.collection("usuarios").document(uid).get()
+                                        .addOnSuccessListener { userDoc ->
+                                            val puntosUsuario = userDoc.getLong("puntos") ?: 0
+                                            if (puntosUsuario < prenda.puntos) {
+                                                Toast.makeText(this@CatalogActivity, getString(R.string.error_insufficient_points, prenda.puntos), Toast.LENGTH_SHORT).show()
+                                                return@addOnSuccessListener
+                                            }
+
+                                            // Reservamos la prenda y restamos puntos en Firestore (Transacción recomendada, pero aquí simple por ahora)
+                                            firestore.collection("prendas").document(prenda.id)
+                                                .update(mapOf(
+                                                    "estadoPublicacion" to "EN PROCESO",
+                                                    "receptorId" to uid
+                                                ))
+                                            
+                                            firestore.collection("usuarios").document(uid)
+                                                .update("puntos", puntosUsuario - prenda.puntos)
+                                        }
+                                }
+                                mensaje = getString(R.string.contact_message_template, prenda.titulo)
                             }
+
+                            // Intentos de WhatsApp
+                            val whatsappUriUri = android.net.Uri.parse("whatsapp://send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}")
+                            val intentNative = android.content.Intent(android.content.Intent.ACTION_VIEW, whatsappUriUri)
+                            try {
+                                startActivity(intentNative)
+                            } catch (eNative: Exception) {
+                                val webUrl = "https://api.whatsapp.com/send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}"
+                                val intentWeb = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
+                                try {
+                                    startActivity(intentWeb)
+                                } catch (eWeb: Exception) {
+                                    Toast.makeText(this, "Error al abrir WhatsApp", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
+                    } else {
+                        Toast.makeText(this, getString(R.string.error_no_phone), Toast.LENGTH_SHORT).show()
                     }
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Error al procesar el contacto: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    dialog.dismiss()
                 }
-            } else {
-                Toast.makeText(this, getString(R.string.error_no_phone), Toast.LENGTH_SHORT).show()
-            }
-            dialog.dismiss()
         }
 
         dialog.setContentView(view)
@@ -420,22 +425,27 @@ class CatalogActivity : AppCompatActivity() {
         val ivFull = fullImageDialog.findViewById<ImageView>(R.id.ivFullImage)
         val btnClose = fullImageDialog.findViewById<ImageButton>(R.id.btnCloseFullImage)
         
+        // Cargar imagen
         val imageUriString = prenda.imagenUri
-        if (imageUriString != null && (imageUriString.startsWith("content://") || imageUriString.startsWith("file://"))) {
-            ivFull.setImageURI(android.net.Uri.parse(imageUriString))
-        } else {
-            val imageName = imageUriString?.trim()?.lowercase()
-            val resId = when(imageName) {
-                "chompa_upn" -> R.drawable.chompa_upn
-                "pantalon_upn" -> R.drawable.pantalon_upn
-                "bata_upn" -> R.drawable.bata_upn
-                "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                else -> if (!imageName.isNullOrEmpty()) {
-                    resources.getIdentifier(imageName, "drawable", packageName)
-                } else 0
+        if (!imageUriString.isNullOrEmpty()) {
+            if (imageUriString.startsWith("http")) {
+                Glide.with(this).load(imageUriString).into(ivFull)
+            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
+                ivFull.setImageURI(android.net.Uri.parse(imageUriString))
+            } else {
+                val imageName = imageUriString.trim().lowercase()
+                val resId = when(imageName) {
+                    "chompa_upn" -> R.drawable.chompa_upn
+                    "pantalon_upn" -> R.drawable.pantalon_upn
+                    "bata_upn" -> R.drawable.bata_upn
+                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                    else -> resources.getIdentifier(imageName, "drawable", packageName)
+                }
+                if (resId != 0) ivFull.setImageResource(resId)
+                else ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
             }
-            if (resId != 0) ivFull.setImageResource(resId)
-            else ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
+        } else {
+            ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
         }
         // Botón de cierre al hacer clic
         btnClose.setOnClickListener { fullImageDialog.dismiss() }
@@ -521,96 +531,45 @@ class CatalogActivity : AppCompatActivity() {
             applyFilters()
         }
     }
-    // Cargamos los productos desde la base de datos
+    // Cargamos los productos desde Firestore
     private fun loadProducts() {
-        val cursor = dbHelper.obtenerCatalogo()
-        val products = mutableListOf<Prenda>()
-
-        if (cursor.moveToFirst()) {
-            do {
-                val prenda = Prenda(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_USUARIO)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TITULO)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_DESCRIPCION)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_CARRERA)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TALLA)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_GENERO)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TIPO)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_PUNTOS)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_IMAGEN)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO)),
-                    if (cursor.isNull(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR))) null
-                    else cursor.getInt(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO_FISICO)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_OBSERVACION))
-                )
-                // MEJORA: Solo mostramos en el catálogo público lo que está DISPONIBLE o EN PROCESO
-                // Las prendas OBSERVADAS solo las verá el Administrador y el dueño en su perfil
-                val loggedInUsername = dbHelper.obtenerNombreUsuario(currentUserId) ?: ""
-                val isAdmin = loggedInUsername.trim().lowercase() == "admin"
-                
-                if (prenda.estado != "OBSERVADA" || isAdmin) {
-                    products.add(prenda)
-                }
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
-
-        // Si la lista está vacía O si el primer producto no tiene imagen (datos viejos), refrescamos
-        if (products.isEmpty() || products[0].imagenUri == null) {
-            dbHelper.vaciarCatalogo() // Esta función la agregamos a DBHelper hace un momento
-            insertSampleData()
-            
-            // Volvemos a cargar después de insertar
-            val newCursor = dbHelper.obtenerCatalogo()
-            val newProducts = mutableListOf<Prenda>()
-            if (newCursor.moveToFirst()) {
-                do {
+        FirebaseFirestore.getInstance().collection("prendas")
+            .orderBy("fechaCreacion", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                val products = mutableListOf<Prenda>()
+                for (document in result) {
                     val prenda = Prenda(
-                        newCursor.getInt(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID)),
-                        newCursor.getInt(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_USUARIO)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TITULO)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_DESCRIPCION)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_CARRERA)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TALLA)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_GENERO)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_TIPO)),
-                        newCursor.getInt(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_PUNTOS)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_IMAGEN)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO)),
-                        if (newCursor.isNull(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR))) null
-                        else newCursor.getInt(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ID_RECEPTOR)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_ESTADO_FISICO)),
-                        newCursor.getString(newCursor.getColumnIndexOrThrow(DBHelper.COL_PRENDA_OBSERVACION))
+                        id = document.id,
+                        idUsuario = document.getString("vendedorId") ?: "",
+                        titulo = document.getString("titulo") ?: "",
+                        descripcion = document.getString("descripcion") ?: "",
+                        carrera = document.getString("carrera") ?: "",
+                        talla = document.getString("talla") ?: "",
+                        genero = document.getString("genero") ?: "",
+                        tipoTransaccion = document.getString("tipo") ?: "",
+                        puntos = document.getLong("puntos")?.toInt() ?: 0,
+                        imagenUri = document.getString("urlImagen"),
+                        estado = document.getString("estadoPublicacion") ?: "DISPONIBLE",
+                        idReceptor = document.getString("receptorId"),
+                        estadoFisico = document.getString("estadoFisico") ?: "Usado",
+                        observacion = document.getString("observacion")
                     )
-                    newProducts.add(prenda)
-                } while (newCursor.moveToNext())
+
+                    val isAdmin = currentRol == "ADMIN"
+                    if (prenda.estado != "OBSERVADA" || isAdmin) {
+                        products.add(prenda)
+                    }
+                }
+                
+                allProducts = products
+                applyFilters()
             }
-            newCursor.close()
-            allProducts = newProducts
-        } else {
-            allProducts = products
-        }
-
-        applyFilters()
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al cargar catálogo: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
     }
-    // Insertamos datos de prueba
-    private fun insertSampleData() {
-        val miNumeroReal = "927672725"
-        
-        // 1. Aseguramos que exista un usuario del sistema para ser dueño de las prendas de demostración
-        if (!dbHelper.existeUsuario("UPN_Oficial")) {
-            dbHelper.insertarUsuario("UPN_Oficial", "upn2024offic", miNumeroReal)
-        }
-        val systemUserId = dbHelper.obtenerUsuarioId("UPN_Oficial")
 
-        // 2. Insertamos usando el ID del usuario del sistema y nombres exactos de archivos en drawable
-        dbHelper.insertarPrenda(systemUserId, "Chompa UPN", "Chompa en buen estado", "Ingeniería", "M", "Unisex", "Intercambio", 50, "chompa_upn")
-        dbHelper.insertarPrenda(systemUserId, "Pantalón de Tela", "Pantalón casi nuevo", "Derecho", "S", "Caballero", "Donación", 0, "pantalon_upn")
-        dbHelper.insertarPrenda(systemUserId, "Bata de Laboratorio", "Bata blanca reglamentaria", "Salud", "L", "Unisex", "Venta", 30, "bata_upn")
-        dbHelper.insertarPrenda(systemUserId, "Casaca Deportiva", "Casaca de la selección UPN", "Comunicaciones", "XL", "Unisex", "Intercambio", 80, "casaca_deportiva_upn")
-    }
     // Configuramos el TextWatcher para la barra de búsqueda
     private fun setupSearch() {
         val etSearch = findViewById<EditText>(R.id.etSearch)

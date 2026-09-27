@@ -8,9 +8,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
+import com.bumptech.glide.Glide
+
 class MyExchangesAdapter(
     private var productList: List<Prenda>,
-    private val currentUserId: Int,
+    private val currentUserId: String?,
     private val onItemClick: (Prenda) -> Unit,
     private val onDeleteClick: (Prenda) -> Unit,
     private val onConfirmClick: (Prenda) -> Unit,
@@ -42,23 +44,27 @@ class MyExchangesAdapter(
         holder.tvExchangeCategory.text = context.getString(R.string.label_category_talla_genero, product.carrera, product.talla, product.genero)
         holder.tvExchangePoints.text = context.getString(R.string.label_points, product.puntos)
         
-        // Cargar imagen
+        // Cargar imagen de forma dinámica usando Glide para mayor eficiencia
         val imageUriString = product.imagenUri
-        if (imageUriString != null && (imageUriString.startsWith("content://") || imageUriString.startsWith("file://"))) {
-            holder.ivExchangeImage.setImageURI(android.net.Uri.parse(imageUriString))
-        } else {
-            val imageName = imageUriString?.trim()?.lowercase()
-            val resId = when(imageName) {
-                "chompa_upn" -> R.drawable.chompa_upn
-                "pantalon_upn" -> R.drawable.pantalon_upn
-                "bata_upn" -> R.drawable.bata_upn
-                "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                else -> if (!imageName.isNullOrEmpty()) {
-                    context.resources.getIdentifier(imageName, "drawable", context.packageName)
-                } else 0
+        if (!imageUriString.isNullOrEmpty()) {
+            if (imageUriString.startsWith("http")) {
+                Glide.with(context).load(imageUriString).into(holder.ivExchangeImage)
+            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
+                holder.ivExchangeImage.setImageURI(android.net.Uri.parse(imageUriString))
+            } else {
+                val imageName = imageUriString.trim().lowercase()
+                val resId = when(imageName) {
+                    "chompa_upn" -> R.drawable.chompa_upn
+                    "pantalon_upn" -> R.drawable.pantalon_upn
+                    "bata_upn" -> R.drawable.bata_upn
+                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                    else -> context.resources.getIdentifier(imageName, "drawable", context.packageName)
+                }
+                if (resId != 0) holder.ivExchangeImage.setImageResource(resId)
+                else holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
             }
-            if (resId != 0) holder.ivExchangeImage.setImageResource(resId)
-            else holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
+        } else {
+            holder.ivExchangeImage.setImageResource(android.R.drawable.ic_menu_gallery)
         }
 
         // Estado dinámico con color y botones de acción
