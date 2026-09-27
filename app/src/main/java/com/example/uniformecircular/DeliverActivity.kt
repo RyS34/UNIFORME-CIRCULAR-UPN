@@ -326,64 +326,58 @@ class DeliverActivity : AppCompatActivity() {
         btnSubir.isEnabled = false
         btnSubir.text = "Subiendo..."
 
-        val storageRef = FirebaseStorage.getInstance().reference
-        val fotoRef = storageRef.child("prendas/${System.currentTimeMillis()}.jpg")
+        // Al estar en plan Spark gratuito sin Storage, asignamos una imagen representativa según la carrera o el título
+        val urlImagenPorDefecto = when {
+            titulo.lowercase().contains("chompa") -> "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=500" // Un suéter genérico bonito
+            titulo.lowercase().contains("pantalon") -> "https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=500" // Un pantalón jean genérico
+            titulo.lowercase().contains("bata") -> "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=500" // Una bata médica/laboratorio
+            else -> "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=500" // Ropa doblada/genérica limpia
+        }
 
-        // 1. Subir imagen a Storage
-        fotoRef.putFile(selectedImageUri!!)
+        // Preparar datos para Firestore
+        val (tipoDB, puntosBaseModalidad) = when (selectedTipoId) {
+            R.id.chipDonacion -> "Donación" to 0
+            R.id.chipVenta -> "Venta" to 30
+            else -> "Intercambio" to 50
+        }
+        val puntosCalculados = if (tipoDB == "Donación") 0 else puntosBaseModalidad + when (selectedEstadoId) {
+            R.id.chipNuevo -> 20
+            R.id.chipSeminuevo -> 10
+            else -> 0
+        }
+
+        val prendaData = hashMapOf(
+            "vendedorId" to currentUserId,
+            "titulo" to titulo,
+            "descripcion" to descripcion,
+            "carrera" to carrera,
+            "talla" to talla,
+            "genero" to genero,
+            "tipo" to tipoDB,
+            "puntos" to puntosCalculados,
+            "urlImagen" to urlImagenPorDefecto,
+            "estadoFisico" to estadoFisico,
+            "estadoPublicacion" to "DISPONIBLE",
+            "fechaCreacion" to com.google.firebase.Timestamp.now()
+        )
+
+        // Guardar directamente en Firestore
+        val firestore = FirebaseFirestore.getInstance()
+        val docRef = if (editPrendaId == null) {
+            firestore.collection("prendas").document()
+        } else {
+            firestore.collection("prendas").document(editPrendaId!!)
+        }
+
+        docRef.set(prendaData)
             .addOnSuccessListener {
-                fotoRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    // 2. Preparar datos para Firestore
-                    val (tipoDB, puntosBaseModalidad) = when (selectedTipoId) {
-                        R.id.chipDonacion -> "Donación" to 0
-                        R.id.chipVenta -> "Venta" to 30
-                        else -> "Intercambio" to 50
-                    }
-                    val puntosCalculados = if (tipoDB == "Donación") 0 else puntosBaseModalidad + when (selectedEstadoId) {
-                        R.id.chipNuevo -> 20
-                        R.id.chipSeminuevo -> 10
-                        else -> 0
-                    }
-
-                    val prendaData = hashMapOf(
-                        "vendedorId" to currentUserId,
-                        "titulo" to titulo,
-                        "descripcion" to descripcion,
-                        "carrera" to carrera,
-                        "talla" to talla,
-                        "genero" to genero,
-                        "tipo" to tipoDB,
-                        "puntos" to puntosCalculados,
-                        "urlImagen" to downloadUri.toString(),
-                        "estadoFisico" to estadoFisico,
-                        "estadoPublicacion" to "DISPONIBLE",
-                        "fechaCreacion" to com.google.firebase.Timestamp.now()
-                    )
-
-                    // 3. Guardar en Firestore
-                    val firestore = FirebaseFirestore.getInstance()
-                    val docRef = if (editPrendaId == null) {
-                        firestore.collection("prendas").document()
-                    } else {
-                        firestore.collection("prendas").document(editPrendaId!!)
-                    }
-
-                    docRef.set(prendaData)
-                        .addOnSuccessListener {
-                            Toast.makeText(this, "¡Publicado en la nube!", Toast.LENGTH_LONG).show()
-                            finish()
-                        }
-                        .addOnFailureListener {
-                            btnSubir.isEnabled = true
-                            btnSubir.text = "Intentar de nuevo"
-                            Toast.makeText(this, "Error Firestore: ${it.message}", Toast.LENGTH_SHORT).show()
-                        }
-                }
+                Toast.makeText(this, "¡Publicado en la nube con éxito!", Toast.LENGTH_LONG).show()
+                finish()
             }
             .addOnFailureListener {
                 btnSubir.isEnabled = true
                 btnSubir.text = "Intentar de nuevo"
-                Toast.makeText(this, "Error al subir foto: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error Firestore: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
     // Guarda la imagen seleccionada en el almacenamiento interno de la aplicación y devuelve su URI
