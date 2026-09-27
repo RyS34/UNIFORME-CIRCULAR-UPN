@@ -53,21 +53,36 @@ class ProductAdapter(
         val imageUriString = product.imagenUri
         
         if (!imageUriString.isNullOrEmpty()) {
-            if (imageUriString.startsWith("http")) {
-                Glide.with(context).load(imageUriString).into(holder.ivProductImage)
-            } else if (imageUriString.startsWith("content://") || imageUriString.startsWith("file://")) {
-                holder.ivProductImage.setImageURI(android.net.Uri.parse(imageUriString))
-            } else {
-                val imageName = imageUriString.trim().lowercase()
-                val resId = when(imageName) {
-                    "chompa_upn" -> R.drawable.chompa_upn
-                    "pantalon_upn" -> R.drawable.pantalon_upn
-                    "bata_upn" -> R.drawable.bata_upn
-                    "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
-                    else -> context.resources.getIdentifier(imageName, "drawable", context.packageName)
+            when {
+                imageUriString.startsWith("base64:") -> {
+                    try {
+                        val base64String = imageUriString.substring(7)
+                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
+                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        holder.ivProductImage.setImageBitmap(decodedImage)
+                        holder.ivProductImage.scaleType = ImageView.ScaleType.CENTER_CROP
+                    } catch (e: Exception) {
+                        holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                    }
                 }
-                if (resId != 0) holder.ivProductImage.setImageResource(resId)
-                else holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                imageUriString.startsWith("http") -> {
+                    Glide.with(context).load(imageUriString).into(holder.ivProductImage)
+                }
+                imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
+                    holder.ivProductImage.setImageURI(android.net.Uri.parse(imageUriString))
+                }
+                else -> {
+                    val imageName = imageUriString.trim().lowercase()
+                    val resId = when(imageName) {
+                        "chompa_upn" -> R.drawable.chompa_upn
+                        "pantalon_upn" -> R.drawable.pantalon_upn
+                        "bata_upn" -> R.drawable.bata_upn
+                        "casaca_deportiva_upn" -> R.drawable.casaca_deportiva_upn
+                        else -> context.resources.getIdentifier(imageName, "drawable", context.packageName)
+                    }
+                    if (resId != 0) holder.ivProductImage.setImageResource(resId)
+                    else holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                }
             }
         } else {
             holder.ivProductImage.setImageResource(android.R.drawable.ic_menu_gallery)

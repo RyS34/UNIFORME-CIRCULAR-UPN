@@ -321,18 +321,28 @@ class DeliverActivity : AppCompatActivity() {
             return
         }
 
-        // --- MIGRACIÓN A FIREBASE ---
+        // --- MIGRACIÓN A FIREBASE (Versión sin Storage - Base64) ---
         val btnSubir = findViewById<Button>(R.id.btnSubirPrenda)
         btnSubir.isEnabled = false
         btnSubir.text = "Subiendo..."
 
-        // Al estar en plan Spark gratuito sin Storage, asignamos una imagen representativa según la carrera o el título
-        val urlImagenPorDefecto = when {
-            titulo.lowercase().contains("chompa") -> "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=500" // Un suéter genérico bonito
-            titulo.lowercase().contains("pantalon") -> "https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=500" // Un pantalón jean genérico
-            titulo.lowercase().contains("bata") -> "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=500" // Una bata médica/laboratorio
-            else -> "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=500" // Ropa doblada/genérica limpia
+        // Convertimos la imagen seleccionada a Base64 comprimido
+        val imagenBase64 = selectedImageUri?.let { uri ->
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                val outputStream = java.io.ByteArrayOutputStream()
+                // Comprimimos al 40% para que quepa en Firestore y no use mucha red
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 40, outputStream)
+                val byteArray = outputStream.toByteArray()
+                "base64:" + android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
+            } catch (e: Exception) {
+                null
+            }
         }
+
+        // Si falló la conversión, usamos la de repuesto
+        val urlFinal = imagenBase64 ?: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=500"
 
         // Preparar datos para Firestore
         val (tipoDB, puntosBaseModalidad) = when (selectedTipoId) {
@@ -355,7 +365,7 @@ class DeliverActivity : AppCompatActivity() {
             "genero" to genero,
             "tipo" to tipoDB,
             "puntos" to puntosCalculados,
-            "urlImagen" to urlImagenPorDefecto,
+            "urlImagen" to urlFinal,
             "estadoFisico" to estadoFisico,
             "estadoPublicacion" to "DISPONIBLE",
             "fechaCreacion" to com.google.firebase.Timestamp.now()
@@ -371,7 +381,7 @@ class DeliverActivity : AppCompatActivity() {
 
         docRef.set(prendaData)
             .addOnSuccessListener {
-                Toast.makeText(this, "¡Publicado en la nube con éxito!", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "¡Publicado con TU foto con éxito!", Toast.LENGTH_LONG).show()
                 finish()
             }
             .addOnFailureListener {
