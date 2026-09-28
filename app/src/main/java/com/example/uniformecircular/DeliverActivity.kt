@@ -117,6 +117,23 @@ class DeliverActivity : AppCompatActivity() {
             findViewById<TextInputLayout>(R.id.tilDescripcion).error = null
         }
 
+        // Limpiar colores de error en ChipGroups al seleccionar
+        val redNormal = ContextCompat.getColor(this, R.color.slate_800)
+        findViewById<ChipGroup>(R.id.cgTalla).setOnCheckedChangeListener { _, _ ->
+            findViewById<TextView>(R.id.tvLabelTalla).setTextColor(redNormal)
+        }
+        findViewById<ChipGroup>(R.id.cgGenero).setOnCheckedChangeListener { _, _ ->
+            findViewById<TextView>(R.id.tvLabelGenero).setTextColor(redNormal)
+        }
+        findViewById<ChipGroup>(R.id.cgEstadoFisico).setOnCheckedChangeListener { _, _ ->
+            findViewById<TextView>(R.id.tvLabelEstadoFisico).setTextColor(redNormal)
+            actualizarResumenPuntos()
+        }
+        findViewById<ChipGroup>(R.id.cgTipo).setOnCheckedChangeListener { _, _ ->
+            findViewById<TextView>(R.id.tvLabelTipo).setTextColor(redNormal)
+            actualizarResumenPuntos()
+        }
+
         // Permitir ver la imagen en grande al hacer clic en la vista previa
         findViewById<ImageView>(R.id.ivPrendaPreview).setOnClickListener {
             selectedImageUri?.let { uri ->
@@ -204,14 +221,7 @@ class DeliverActivity : AppCompatActivity() {
     }
     // Actualiza el resumen de puntos en tiempo real al cambiar el estado físico o la modalidad
     private fun setupPointsListeners() {
-        val cgEstadoFisico = findViewById<ChipGroup>(R.id.cgEstadoFisico)
-        val cgTipo = findViewById<ChipGroup>(R.id.cgTipo)
-
-        cgEstadoFisico.setOnCheckedChangeListener { _, _ -> actualizarResumenPuntos() }
-        cgTipo.setOnCheckedChangeListener { _, _ -> actualizarResumenPuntos() }
-
-        // Inicializar el valor
-        actualizarResumenPuntos()
+        // Los listeners ya se configuraron en onCreate para manejar también la limpieza de colores de error
     }
     // Actualiza el resumen de puntos en tiempo real al cambiar el estado físico o la modalidad
     private fun actualizarResumenPuntos() {
@@ -329,72 +339,86 @@ class DeliverActivity : AppCompatActivity() {
         spinner.adapter = adapter
     }
     // Válida y sube una nueva prenda a la base de datos y muestra un mensaje de éxito o error
-        private fun validarYSubir() {
+    private fun validarYSubir() {
         val tilTitulo = findViewById<TextInputLayout>(R.id.tilTitulo)
         val etTitulo = findViewById<TextInputEditText>(R.id.etTitulo)
         val tilDescripcion = findViewById<TextInputLayout>(R.id.tilDescripcion)
         val etDescripcion = findViewById<TextInputEditText>(R.id.etDescripcion)
         val cvFoto = findViewById<MaterialCardView>(R.id.cvFotoPrenda)
+        val scrollView = findViewById<ScrollView>(R.id.scrollViewDeliver)
 
         val titulo = etTitulo.text.toString().trim()
         val descripcion = etDescripcion.text.toString().trim()
-        val carrera = findViewById<Spinner>(R.id.spCarrera).selectedItem.toString()
+        
+        val cgTalla = findViewById<ChipGroup>(R.id.cgTalla)
+        val cgGenero = findViewById<ChipGroup>(R.id.cgGenero)
+        val cgEstadoFisico = findViewById<ChipGroup>(R.id.cgEstadoFisico)
+        val cgTipo = findViewById<ChipGroup>(R.id.cgTipo)
 
-        // Validaciones Visuales
-        var hasError = false
+        val tvLabelTalla = findViewById<TextView>(R.id.tvLabelTalla)
+        val tvLabelGenero = findViewById<TextView>(R.id.tvLabelGenero)
+        val tvLabelEstadoFisico = findViewById<TextView>(R.id.tvLabelEstadoFisico)
+        val tvLabelTipo = findViewById<TextView>(R.id.tvLabelTipo)
 
+        val colorError = ContextCompat.getColor(this, android.R.color.holo_red_dark)
+
+        // Validaciones Visuales y Enfoque
         if (selectedImageUri == null) {
-            cvFoto.strokeColor = ContextCompat.getColor(this, android.R.color.holo_red_dark)
+            cvFoto.strokeColor = colorError
+            scrollView.smoothScrollTo(0, cvFoto.top)
             Toast.makeText(this, getString(R.string.error_empty_photo), Toast.LENGTH_SHORT).show()
-            hasError = true
+            return
         } else {
             cvFoto.strokeColor = ContextCompat.getColor(this, R.color.slate_100)
         }
 
-        if (descripcion.isEmpty()) {
-            tilDescripcion.error = getString(R.string.error_empty_desc)
-            etDescripcion.requestFocus()
-            hasError = true
-        }
-
         if (titulo.isEmpty()) {
             tilTitulo.error = getString(R.string.error_empty_title)
+            scrollView.smoothScrollTo(0, tilTitulo.top)
             etTitulo.requestFocus()
-            hasError = true
+            return
         }
 
-        if (hasError) return
+        if (descripcion.isEmpty()) {
+            tilDescripcion.error = getString(R.string.error_empty_desc)
+            scrollView.smoothScrollTo(0, tilDescripcion.top)
+            etDescripcion.requestFocus()
+            return
+        }
 
-        val cgTalla = findViewById<ChipGroup>(R.id.cgTalla)
-        val selectedTallaId = cgTalla.checkedChipId
-        if (selectedTallaId == View.NO_ID) {
+        if (cgTalla.checkedChipId == View.NO_ID) {
+            tvLabelTalla.setTextColor(colorError)
+            scrollView.smoothScrollTo(0, tvLabelTalla.top)
             Toast.makeText(this, getString(R.string.error_empty_talla), Toast.LENGTH_SHORT).show()
             return
         }
-        val talla = findViewById<Chip>(selectedTallaId).text.toString()
 
-        val cgGenero = findViewById<ChipGroup>(R.id.cgGenero)
-        val selectedGeneroId = cgGenero.checkedChipId
-        if (selectedGeneroId == View.NO_ID) {
+        if (cgGenero.checkedChipId == View.NO_ID) {
+            tvLabelGenero.setTextColor(colorError)
+            scrollView.smoothScrollTo(0, tvLabelGenero.top)
             Toast.makeText(this, getString(R.string.error_empty_gender), Toast.LENGTH_SHORT).show()
             return
         }
-        val genero = findViewById<Chip>(selectedGeneroId).text.toString()
 
-        val cgEstadoFisico = findViewById<ChipGroup>(R.id.cgEstadoFisico)
-        val selectedEstadoId = cgEstadoFisico.checkedChipId
-        if (selectedEstadoId == View.NO_ID) {
+        if (cgEstadoFisico.checkedChipId == View.NO_ID) {
+            tvLabelEstadoFisico.setTextColor(colorError)
+            scrollView.smoothScrollTo(0, tvLabelEstadoFisico.top)
             Toast.makeText(this, getString(R.string.error_empty_condition), Toast.LENGTH_SHORT).show()
             return
         }
-        val estadoFisico = findViewById<Chip>(selectedEstadoId).text.toString()
 
-        val cgTipo = findViewById<ChipGroup>(R.id.cgTipo)
-        val selectedTipoId = cgTipo.checkedChipId
-        if (selectedTipoId == View.NO_ID) {
+        if (cgTipo.checkedChipId == View.NO_ID) {
+            tvLabelTipo.setTextColor(colorError)
+            scrollView.smoothScrollTo(0, tvLabelTipo.top)
             Toast.makeText(this, getString(R.string.error_empty_modality), Toast.LENGTH_SHORT).show()
             return
         }
+
+        val carrera = findViewById<Spinner>(R.id.spCarrera).selectedItem.toString()
+        val talla = findViewById<Chip>(cgTalla.checkedChipId).text.toString()
+        val genero = findViewById<Chip>(cgGenero.checkedChipId).text.toString()
+        val estadoFisico = findViewById<Chip>(cgEstadoFisico.checkedChipId).text.toString()
+        val selectedTipoId = cgTipo.checkedChipId
 
         if (currentUserId == null) {
             Toast.makeText(this, "Error: Inicia sesión nuevamente", Toast.LENGTH_SHORT).show()
@@ -450,7 +474,7 @@ class DeliverActivity : AppCompatActivity() {
             R.id.chipVenta -> "Venta" to 30
             else -> "Intercambio" to 50
         }
-        val puntosCalculados = if (tipoDB == "Donación") 0 else puntosBaseModalidad + when (selectedEstadoId) {
+        val puntosCalculados = if (tipoDB == "Donación") 0 else puntosBaseModalidad + when (cgEstadoFisico.checkedChipId) {
             R.id.chipNuevo -> 20
             R.id.chipSeminuevo -> 10
             else -> 0

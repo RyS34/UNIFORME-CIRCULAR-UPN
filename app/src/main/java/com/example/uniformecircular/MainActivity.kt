@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.ImageButton
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -125,63 +126,80 @@ class MainActivity : AppCompatActivity() {
         val tvDesc = view.findViewById<TextView>(R.id.tvImpactDialogDesc)
         val tvStatAportes = view.findViewById<TextView>(R.id.tvStatAportes)
         val tvStatPuntos = view.findViewById<TextView>(R.id.tvStatPuntos)
+        val btnRefresh = view.findViewById<ImageButton>(R.id.btnRefreshImpact)
 
-        // Obtener prendas del usuario desde Firestore
-        currentUserId?.let { uid ->
-            FirebaseFirestore.getInstance().collection("prendas")
-                .whereEqualTo("vendedorId", uid)
-                .get()
-                .addOnSuccessListener { result ->
-                    val misPrendas = result.map { doc ->
-                        Prenda(
-                            id = doc.id,
-                            idUsuario = doc.getString("vendedorId") ?: "",
-                            titulo = doc.getString("titulo") ?: "",
-                            descripcion = doc.getString("descripcion") ?: "",
-                            carrera = doc.getString("carrera") ?: "",
-                            talla = doc.getString("talla") ?: "",
-                            genero = doc.getString("genero") ?: "",
-                            tipoTransaccion = doc.getString("tipo") ?: "",
-                            puntos = doc.getLong("puntos")?.toInt() ?: 0,
-                            imagenUri = doc.getString("urlImagen"),
-                            estado = doc.getString("estadoPublicacion") ?: "DISPONIBLE",
-                            idReceptor = doc.getString("receptorId"),
-                            estadoFisico = doc.getString("estadoFisico") ?: "Usado",
-                            observacion = doc.getString("observacion")
-                        )
-                    }
-                    
-                    val puntosGenerados = misPrendas.sumOf { it.puntos }
-                    tvStatAportes.text = misPrendas.size.toString()
-                    tvStatPuntos.text = puntosGenerados.toString()
-
-                    if (misPrendas.isEmpty()) {
-                        tvDesc.text = "Aún no has realizado aportes. ¡Empieza hoy!"
-                        view.findViewById<View>(R.id.layoutStats).visibility = View.GONE
-                    } else {
-                        tvDesc.text = "Has contribuido a la economía circular de la UPN"
-                    }
-
-                    rvContributions.layoutManager = LinearLayoutManager(this)
-                    val impactAdapter = ProductAdapter(misPrendas, isCompact = true) { prenda ->
-                        if (prenda.estado == "OBSERVADA") {
-                            val intent = Intent(this, ExchangesActivity::class.java).apply {
-                                putExtra("USER_NAME", currentUserName)
-                                putExtra("SELECT_TAB", 0)
-                            }
-                            startActivity(intent)
-                        } else {
-                            val intent = Intent(this, CatalogActivity::class.java).apply {
-                                putExtra("PRENDA_ID", prenda.id)
-                                putExtra("USER_NAME", currentUserName)
-                            }
-                            startActivity(intent)
+        fun cargarDatosImpacto() {
+            currentUserId?.let { uid ->
+                FirebaseFirestore.getInstance().collection("prendas")
+                    .whereEqualTo("vendedorId", uid)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        val misPrendas = result.map { doc ->
+                            Prenda(
+                                id = doc.id,
+                                idUsuario = doc.getString("vendedorId") ?: "",
+                                titulo = doc.getString("titulo") ?: "",
+                                descripcion = doc.getString("descripcion") ?: "",
+                                carrera = doc.getString("carrera") ?: "",
+                                talla = doc.getString("talla") ?: "",
+                                genero = doc.getString("genero") ?: "",
+                                tipoTransaccion = doc.getString("tipo") ?: "",
+                                puntos = doc.getLong("puntos")?.toInt() ?: 0,
+                                imagenUri = doc.getString("urlImagen"),
+                                estado = doc.getString("estadoPublicacion") ?: "DISPONIBLE",
+                                idReceptor = doc.getString("receptorId"),
+                                estadoFisico = doc.getString("estadoFisico") ?: "Usado",
+                                observacion = doc.getString("observacion")
+                            )
                         }
-                        dialog.dismiss()
+
+                        val puntosGenerados = misPrendas.sumOf { it.puntos }
+                        tvStatAportes.text = misPrendas.size.toString()
+                        tvStatPuntos.text = puntosGenerados.toString()
+
+                        if (misPrendas.isEmpty()) {
+                            tvDesc.text = "Aún no has realizado aportes. ¡Empieza hoy!"
+                            view.findViewById<View>(R.id.layoutStats).visibility = View.GONE
+                        } else {
+                            tvDesc.text = "Has contribuido a la economía circular de la UPN"
+                            view.findViewById<View>(R.id.layoutStats).visibility = View.VISIBLE
+                        }
+
+                        rvContributions.layoutManager = LinearLayoutManager(this@MainActivity)
+                        val impactAdapter = ProductAdapter(misPrendas, isCompact = true) { prenda ->
+                            if (prenda.estado == "OBSERVADA") {
+                                val intent = Intent(this@MainActivity, ExchangesActivity::class.java).apply {
+                                    putExtra("USER_NAME", currentUserName)
+                                    putExtra("SELECT_TAB", 0)
+                                }
+                                startActivity(intent)
+                            } else {
+                                val intent = Intent(this@MainActivity, CatalogActivity::class.java).apply {
+                                    putExtra("PRENDA_ID", prenda.id)
+                                    putExtra("USER_NAME", currentUserName)
+                                }
+                                startActivity(intent)
+                            }
+                            dialog.dismiss()
+                        }
+                        rvContributions.adapter = impactAdapter
                     }
-                    rvContributions.adapter = impactAdapter
-                }
+            }
         }
+
+        btnRefresh?.setOnClickListener {
+            val rotation = android.view.animation.RotateAnimation(
+                0f, 360f,
+                android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
+                android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f
+            )
+            rotation.duration = 600
+            btnRefresh.startAnimation(rotation)
+            cargarDatosImpacto()
+        }
+
+        // Carga inicial
+        cargarDatosImpacto()
 
         btnManage.setOnClickListener {
             val intent = Intent(this, ExchangesActivity::class.java).apply {

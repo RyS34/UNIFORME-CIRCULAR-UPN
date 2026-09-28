@@ -165,15 +165,29 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:baselineAligned="false">
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.4"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="12dp">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/label_owner_upper" android:textColor="@color/gray_400" android:textSize="11sp" android:textStyle="bold" />
                     <TextView android:id="@+id/tvDetailOwner" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
                 </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.8"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/label_status_upper" android:textColor="@color/gray_400" android:textSize="11sp" android:textStyle="bold" />
                     <TextView android:id="@+id/tvDetailEstadoFisico" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
                 </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.8"
+                    android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/label_type_upper" android:textColor="@color/gray_400" android:textSize="11sp" android:textStyle="bold" />
                     <TextView android:id="@+id/tvDetailType" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
                 </LinearLayout>

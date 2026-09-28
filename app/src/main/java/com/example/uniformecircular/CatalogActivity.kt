@@ -247,9 +247,18 @@ class CatalogActivity : AppCompatActivity() {
                     
                     customDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
                     
+                    val tilMotivo = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilMotivo)
                     val etMotivo = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etMotivo)
                     val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
                     val btnConfirm = dialogView.findViewById<Button>(R.id.btnConfirm)
+
+                    etMotivo.addTextChangedListener(object : android.text.TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                            tilMotivo.error = null
+                        }
+                        override fun afterTextChanged(s: android.text.Editable?) {}
+                    })
 
                     btnCancel.setOnClickListener { customDialog.dismiss() }
                     btnConfirm.setOnClickListener {
@@ -270,7 +279,7 @@ class CatalogActivity : AppCompatActivity() {
                                     Toast.makeText(this@CatalogActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                         } else {
-                            etMotivo.error = getString(R.string.error_empty_observation)
+                            tilMotivo.error = getString(R.string.error_empty_observation)
                         }
                     }
                     customDialog.show()
@@ -487,8 +496,8 @@ class CatalogActivity : AppCompatActivity() {
         }
     }
 
-    // Muestra la imagen de la prenda a pantalla completa
-    @SuppressLint("DiscouragedApi")
+    // Muestra la imagen de la prenda a pantalla completa con soporte de gestos de zoom (Pinch-to-Zoom y arrastre)
+    @SuppressLint("DiscouragedApi", "ClickableViewAccessibility")
     private fun showFullImage(prenda: Prenda) {
         val fullImageDialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         fullImageDialog.setContentView(R.layout.dialog_full_image)
@@ -532,6 +541,59 @@ class CatalogActivity : AppCompatActivity() {
         } else {
             ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
         }
+
+        // Implementación nativa de Gesto Pinch-to-Zoom y Arrastre sin librerías externas
+        var scaleFactor = 1.0f
+        val scaleGestureDetector = android.view.ScaleGestureDetector(this, object : android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: android.view.ScaleGestureDetector): Boolean {
+                scaleFactor *= detector.scaleFactor
+                scaleFactor = scaleFactor.coerceIn(1.0f, 5.0f) // Límite de zoom entre 1x y 5x
+                ivFull.scaleX = scaleFactor
+                ivFull.scaleY = scaleFactor
+                return true
+            }
+        })
+
+        var lastTouchX = 0f
+        var lastTouchY = 0f
+        var posX = 0f
+        var posY = 0f
+
+        ivFull.setOnTouchListener { v, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    lastTouchX = event.rawX
+                    lastTouchY = event.rawY
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    if (scaleFactor > 1.0f) { // Solo permitir arrastrar si hay zoom aplicado
+                        val deltaX = event.rawX - lastTouchX
+                        val deltaY = event.rawY - lastTouchY
+                        
+                        posX += deltaX
+                        posY += deltaY
+                        
+                        v.translationX = posX
+                        v.translationY = posY
+                        
+                        lastTouchX = event.rawX
+                        lastTouchY = event.rawY
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP -> {
+                    // Si se remueve el zoom, resetear la posición centrada suavemente
+                    if (scaleFactor <= 1.0f) {
+                        posX = 0f
+                        posY = 0f
+                        v.animate().translationX(0f).translationY(0f).setDuration(200).start()
+                    }
+                }
+            }
+            true
+        }
+
         // Botón de cierre al hacer clic
         btnClose.setOnClickListener { fullImageDialog.dismiss() }
         fullImageDialog.show()

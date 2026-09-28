@@ -208,17 +208,17 @@ class Login : AppCompatActivity() {
                         finish()
                     } else {
                         val errorMsg = task.exception?.message ?: ""
-                        // Capturar errores comunes de Firebase Auth en inglés y traducirlos de forma clara
+                        // Capturar errores comunes de Firebase Auth en inglés y traducirlos de forma clara utilizando recursos string diferenciados
                         if (errorMsg.contains("user-not-found") || 
                             errorMsg.contains("There is no user record")) {
-                            Toast.makeText(this, "El usuario ingresado no existe", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, getString(R.string.username_incorrect_error), Toast.LENGTH_SHORT).show()
                         } else if (errorMsg.contains("wrong-password") || 
                                    errorMsg.contains("invalid-credential")) {
-                            Toast.makeText(this, "Contraseña incorrecta", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, getString(R.string.password_incorrect_error), Toast.LENGTH_SHORT).show()
                         } else if (errorMsg.contains("network-request-failed")) {
                             Toast.makeText(this, "Error de red: Verifica tu conexión a internet", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, getString(R.string.invalid_credentials_error), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

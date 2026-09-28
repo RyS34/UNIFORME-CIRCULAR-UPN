@@ -90,6 +90,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
                 android:backgroundTint="#D97706"
+                android:textColor="@color/white"
                 android:text="@string/dialog_admin_observe_confirm"
                 android:textAllCaps="false"
                 android:textSize="15sp"

@@ -5,7 +5,7 @@
     <string name="welcome_prefix">Bienvenido,</string>
     <string name="logout">Cerrar Sesión</string>
     <string name="login_title">Login</string>
-    <string name="hint_username">Código de Estudiante (N0...)</string>
+    <string name="hint_username">Código de Estudiante (Ej: N00350520)</string>
     <string name="helper_text_username">Se vinculará a tu correo @upn.pe</string>
     <string name="hint_password">Contraseña</string>
     <string name="login_button">Ingresar</string>

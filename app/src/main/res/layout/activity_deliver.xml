@@ -53,6 +53,7 @@
     </LinearLayout>
 
     <ScrollView
+        android:id="@+id/scrollViewDeliver"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
@@ -280,6 +281,7 @@
 
                     <!-- Talla Selector Moderno -->
                     <TextView
+                        android:id="@+id/tvLabelTalla"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Talla disponible"
@@ -303,6 +305,7 @@
 
                     <!-- Género Selector Moderno -->
                     <TextView
+                        android:id="@+id/tvLabelGenero"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Género"
@@ -325,6 +328,7 @@
 
                     <!-- Estado Físico de la Prenda -->
                     <TextView
+                        android:id="@+id/tvLabelEstadoFisico"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/label_garment_condition"
@@ -355,6 +359,7 @@
 
                     <!-- Tipo de Transacción -->
                     <TextView
+                        android:id="@+id/tvLabelTipo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/label_transaction_type"
