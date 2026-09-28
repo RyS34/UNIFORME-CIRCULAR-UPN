@@ -199,7 +199,7 @@
                         android:backgroundTint="@color/brand_blue"
                         android:text="@string/login_button"
                         android:textAllCaps="false"
-                        android:textColor="@color/white"
+                        android:textColor="@android:color/white"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         app:cornerRadius="16dp"
@@ -226,7 +226,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="@string/login_footer_slogan"
-                android:textColor="@color/white"
+                android:textColor="@android:color/white"
                 android:textSize="12sp"
                 android:alpha="0.8"
                 android:layout_marginBottom="16dp" />

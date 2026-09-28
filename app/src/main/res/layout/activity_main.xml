@@ -70,7 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/welcome_prefix"
-                android:textColor="@color/white"
+                android:textColor="@android:color/white"
                 android:alpha="0.8"
                 android:textSize="13sp"
                 android:fontFamily="sans-serif-medium" />
@@ -79,7 +79,7 @@
                 android:id="@+id/tvWelcome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/white"
+                android:textColor="@android:color/white"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:includeFontPadding="false"
@@ -90,12 +90,13 @@
             android:id="@+id/cardPointsTop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:cardBackgroundColor="#26FFFFFF"
             app:layout_constraintTop_toTopOf="@id/containerProfile"
             app:layout_constraintBottom_toBottomOf="@id/containerProfile"
-            app:layout_constraintEnd_toEndOf="parent">
+            app:layout_constraintEnd_toStartOf="@id/btnToggleDarkMode">
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -114,11 +115,27 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0 Pts"
-                    android:textColor="@color/white"
+                    android:textColor="@android:color/white"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <!-- Botón para Cambiar de Modo (Claro/Oscuro) - Posición Premium -->
+        <ImageButton
+            android:id="@+id/btnToggleDarkMode"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_dark_mode"
+            app:tint="@android:color/white"
+            android:contentDescription="Modo"
+            app:layout_constraintTop_toTopOf="@id/containerProfile"
+            app:layout_constraintBottom_toBottomOf="@id/containerProfile"
+            app:layout_constraintEnd_toEndOf="parent" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Barra de Búsqueda Visual -->

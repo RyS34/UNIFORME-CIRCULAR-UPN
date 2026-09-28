@@ -115,6 +115,26 @@ class MainActivity : AppCompatActivity() {
 
         // Ver Todos (Recién llegados)
         findViewById<View>(R.id.tvRecentViewAll)?.setOnClickListener { openCatalogWithFilter("Todas") }
+
+        // Botón interactivo para alternar Modo Oscuro / Modo Claro de forma manual
+        val btnToggleDarkMode = findViewById<ImageButton>(R.id.btnToggleDarkMode)
+        
+        // Actualizar icono inicial basado en el modo actual
+        val currentMode = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
+        if (currentMode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES) {
+            btnToggleDarkMode?.setImageResource(R.drawable.ic_light_mode)
+        } else {
+            btnToggleDarkMode?.setImageResource(R.drawable.ic_dark_mode)
+        }
+
+        btnToggleDarkMode?.setOnClickListener {
+            val mode = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
+            if (mode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES) {
+                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
+            } else {
+                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
+            }
+        }
     }
     @SuppressLint("InflateParams")
     private fun mostrarResumenImpacto(currentUserName: String) {

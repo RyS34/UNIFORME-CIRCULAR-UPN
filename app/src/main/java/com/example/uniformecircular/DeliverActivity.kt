@@ -335,7 +335,25 @@ class DeliverActivity : AppCompatActivity() {
     private fun setupSpinner() {
         val spinner = findViewById<Spinner>(R.id.spCarrera)
         val carreras = listOf("Ingeniería", "Salud", "Derecho", "Arquitectura", "Negocios", "Comunicaciones")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, carreras)
+        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, carreras) {
+            override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+                val v = super.getView(position, convertView, parent)
+                if (v is TextView) {
+                    v.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.slate_800))
+                    v.textSize = 15f
+                }
+                return v
+            }
+            override fun getDropDownView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+                val v = super.getDropDownView(position, convertView, parent)
+                if (v is TextView) {
+                    v.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.slate_800))
+                    v.setBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.white))
+                }
+                return v
+            }
+        }
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
     }
     // Válida y sube una nueva prenda a la base de datos y muestra un mensaje de éxito o error

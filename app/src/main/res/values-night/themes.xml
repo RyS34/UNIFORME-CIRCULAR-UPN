@@ -1,9 +1,43 @@
-<resources>
-    <!-- Base application theme. -->
-    <style name="Base.Theme.UniformeCircular" parent="Theme.Material3.Light.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme para Modo Oscuro. -->
+    <style name="Base.Theme.UniformeCircular" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Colores principales de la marca adaptados para modo noche (tonos más sutiles y pasteles) -->
+        <item name="colorPrimary">@color/brand_blue</item>
+        <item name="colorSecondary">@color/brand_cyan</item>
+        <item name="android:windowBackground">@color/bg_background</item>
     </style>
 
+    <style name="Theme.UniformeCircular" parent="Base.Theme.UniformeCircular">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowContentTransitions">true</item>
 
+        <!-- Edge-to-Edge y Transparencia en Modo Oscuro -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+
+        <!-- Color de los textos de sugerencia (Hints) en la noche -->
+        <item name="android:textColorHint">@color/hint_color</item>
+    </style>
+
+    <!-- Tema específico para el Video Splash en Modo Oscuro -->
+    <style name="Theme.UniformeCircular.VideoSplash" parent="Theme.UniformeCircular">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">shortEdges</item>
+    </style>
+
+    <!-- Estilo para BottomSheet en Modo Oscuro con fondo oscuro de superficie -->
+    <style name="BottomSheetDialogTheme" parent="Theme.Design.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+    </style>
+
+    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
 </resources>
