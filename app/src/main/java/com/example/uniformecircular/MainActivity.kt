@@ -31,21 +31,10 @@ class MainActivity : AppCompatActivity() {
     private var currentUserId: String? = null
     private var currentUserName: String = "Usuario"
 
-    private val themePrefs by lazy { getSharedPreferences("theme_prefs", android.content.Context.MODE_PRIVATE) }
-
     private fun Int.toPx(context: android.content.Context): Int = (this * context.resources.displayMetrics.density).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        
-        // Aplicar el tema guardado antes de setContentView
-        val isDarkMode = themePrefs.getBoolean("isDarkMode", false)
-        if (isDarkMode) {
-            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
-        } else {
-            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
-        }
-
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -126,28 +115,6 @@ class MainActivity : AppCompatActivity() {
 
         // Ver Todos (Recién llegados)
         findViewById<View>(R.id.tvRecentViewAll)?.setOnClickListener { openCatalogWithFilter("Todas") }
-
-        // Botón interactivo para alternar Modo Oscuro / Modo Claro de forma manual
-        val btnToggleDarkMode = findViewById<ImageButton>(R.id.btnToggleDarkMode)
-        
-        // Actualizar icono inicial basado en el modo actual configurado en la app
-        val isDark = themePrefs.getBoolean("isDarkMode", false)
-        btnToggleDarkMode?.setImageResource(if (isDark) R.drawable.ic_light_mode else R.drawable.ic_dark_mode)
-
-        btnToggleDarkMode?.setOnClickListener {
-            val currentIsDark = themePrefs.getBoolean("isDarkMode", false)
-            val newMode = !currentIsDark
-            
-            // Guardar preferencia
-            themePrefs.edit().putBoolean("isDarkMode", newMode).apply()
-            
-            // Aplicar cambio
-            if (newMode) {
-                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
-            } else {
-                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
-            }
-        }
     }
     @SuppressLint("InflateParams")
     private fun mostrarResumenImpacto(currentUserName: String) {
