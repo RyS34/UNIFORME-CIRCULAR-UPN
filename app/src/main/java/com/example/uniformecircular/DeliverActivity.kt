@@ -37,8 +37,19 @@ import android.graphics.Matrix
 import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 
-class DeliverActivity : AppCompatActivity() {
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+
+class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
     
+    private lateinit var mMap: GoogleMap
+    private val upnBrena = LatLng(-12.058337, -77.0599435)
+
     private var currentUserId: String? = null
     private var selectedImageUri: Uri? = null
     private var cameraImageUri: Uri? = null
@@ -144,10 +155,52 @@ class DeliverActivity : AppCompatActivity() {
         // Configurar listeners para actualización de puntos en tiempo real
         setupPointsListeners()
 
+        // Inicializar Mapa
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.mapFragment) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+
+        findViewById<FloatingActionButton>(R.id.fabMapType).setOnClickListener { view ->
+            showMapTypeMenu(view)
+        }
+
         if (editPrendaId != null) {
             cargarDatosPrenda(editPrendaId!!)
         }
     }
+
+    override fun onMapReady(googleMap: GoogleMap) {
+        mMap = googleMap
+        
+        // Configuración inicial
+        mMap.addMarker(MarkerOptions()
+            .position(upnBrena)
+            .title("Punto de Entrega: UPN Breña"))
+        
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(upnBrena, 16f))
+        
+        // Habilitar controles básicos
+        mMap.uiSettings.isZoomControlsEnabled = true
+        mMap.uiSettings.isMapToolbarEnabled = true
+    }
+
+    private fun showMapTypeMenu(view: View) {
+        val popup = PopupMenu(this, view)
+        popup.menu.add("Normal")
+        popup.menu.add("Satélite")
+        popup.menu.add("Terreno")
+        
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title) {
+                "Normal" -> mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+                "Satélite" -> mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                "Terreno" -> mMap.mapType = GoogleMap.MAP_TYPE_TERRAIN
+            }
+            true
+        }
+        popup.show()
+    }
+
     // Carga los datos de la prenda a editar desde Firestore
     private fun cargarDatosPrenda(idPrenda: String) {
         findViewById<TextView>(R.id.tvTitle).text = "Editar Publicación"

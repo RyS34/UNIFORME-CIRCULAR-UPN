@@ -91,6 +91,11 @@
             tools:replace="android:screenOrientation"
             android:stateNotNeeded="true" />
 
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC40zWz0tgpKA5lKZt7rGza6KtYqYB0uQ4" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.uniformecircular.fileprovider"

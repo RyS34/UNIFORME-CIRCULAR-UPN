@@ -54,6 +54,9 @@ dependencies {
     // QR Code
     implementation libs.zxing.android.embedded
     implementation 'com.google.zxing:core:3.5.3'
+
+    // Google Maps
+    implementation libs.play.services.maps
     
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

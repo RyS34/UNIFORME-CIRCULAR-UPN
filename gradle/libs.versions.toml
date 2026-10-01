@@ -10,6 +10,7 @@ material = "1.12.0"
 activity = "1.9.2"
 constraintlayout = "2.1.4"
 splashscreen = "1.0.1"
+playServicesMaps = "19.0.0"
 firebaseBom = "33.10.0"
 googleServicesPlugin = "4.4.2"
 zxingAndroidEmbedded = "4.3.0"
@@ -31,6 +32,7 @@ firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version = "4.16.0" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
