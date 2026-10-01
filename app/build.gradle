@@ -57,8 +57,10 @@ dependencies {
 
     // Google Maps
     implementation libs.play.services.maps
-    
+
+    // Testing
     testImplementation libs.junit
+
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
 }
