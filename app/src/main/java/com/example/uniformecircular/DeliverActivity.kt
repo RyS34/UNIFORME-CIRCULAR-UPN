@@ -48,7 +48,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
     
     private lateinit var mMap: GoogleMap
-    private val upnBrena = LatLng(-12.058337, -77.0599435)
+    private val upnBrena = LatLng(-12.058481094422284, -77.05873163031838)
+    private var entregaLocation: LatLng = upnBrena // Variable para guardar la ubicación elegida
+    private var currentMarker: com.google.android.gms.maps.model.Marker? = null
 
     private var currentUserId: String? = null
     private var selectedImageUri: Uri? = null
@@ -163,27 +165,43 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
         findViewById<FloatingActionButton>(R.id.fabMapType).setOnClickListener { view ->
             showMapTypeMenu(view)
         }
+        findViewById<FloatingActionButton>(R.id.fabExpandMap).setOnClickListener {
+            showFullMapDialog()
+        }
 
         if (editPrendaId != null) {
             cargarDatosPrenda(editPrendaId!!)
         }
     }
-
+    // Manejo del mapa de Google Maps
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         
-        // Configuración inicial
-        mMap.addMarker(MarkerOptions()
-            .position(upnBrena)
-            .title("Punto de Entrega: UPN Breña"))
+        // Marcador inicial
+        actualizarMarcador(upnBrena)
         
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(upnBrena, 16f))
         
         // Habilitar controles básicos
         mMap.uiSettings.isZoomControlsEnabled = true
         mMap.uiSettings.isMapToolbarEnabled = true
-    }
 
+        // PERMITIR CAMBIAR LA UBICACIÓN AL TOCAR EL MAPA
+        mMap.setOnMapClickListener { latLng ->
+            actualizarMarcador(latLng)
+            entregaLocation = latLng
+            Toast.makeText(this, "Punto de entrega actualizado", Toast.LENGTH_SHORT).show()
+        }
+    }
+    // Actualiza el marcador en el mapa con la nueva ubicación elegida
+    private fun actualizarMarcador(posicion: LatLng) {
+        currentMarker?.remove() // Quitar el marcador anterior
+        currentMarker = mMap.addMarker(MarkerOptions()
+            .position(posicion)
+            .title("Punto de Entrega")
+            .snippet("Toca otro punto para cambiar"))
+    }
+    // Muestra el menú de tipo de mapa en el mapa de Google Maps con el botón flotante
     private fun showMapTypeMenu(view: View) {
         val popup = PopupMenu(this, view)
         popup.menu.add("Normal")
@@ -199,6 +217,45 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
             true
         }
         popup.show()
+    }
+    // Muestra un diálogo de mapa completo en el mapa de Google Maps con el botón flotante
+    private fun showFullMapDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_full_map, null)
+        val dialog = android.app.Dialog(this, android.R.style.Theme_Material_Light_NoActionBar_Fullscreen)
+        dialog.setContentView(dialogView)
+
+        val mapView = dialogView.findViewById<com.google.android.gms.maps.MapView>(R.id.mapViewFull)
+        var tempLocation = entregaLocation
+        var tempMarker: com.google.android.gms.maps.model.Marker? = null
+
+        mapView.onCreate(null)
+        mapView.getMapAsync { googleMap ->
+            googleMap.uiSettings.isZoomControlsEnabled = true
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(tempLocation, 16f))
+            
+            tempMarker = googleMap.addMarker(MarkerOptions().position(tempLocation).title("Punto seleccionado"))
+
+            googleMap.setOnMapClickListener { latLng ->
+                tempLocation = latLng
+                tempMarker?.remove()
+                tempMarker = googleMap.addMarker(MarkerOptions().position(latLng).title("Punto seleccionado"))
+            }
+        }
+
+        dialogView.findViewById<ImageButton>(R.id.btnCloseMap).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<Button>(R.id.btnConfirmLocation).setOnClickListener {
+            entregaLocation = tempLocation
+            actualizarMarcador(entregaLocation)
+            mMap.animateCamera(CameraUpdateFactory.newLatLng(entregaLocation))
+            dialog.dismiss()
+            Toast.makeText(this, "Ubicación confirmada", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+        mapView.onResume()
     }
 
     // Carga los datos de la prenda a editar desde Firestore
@@ -562,6 +619,8 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
             "puntos" to puntosCalculados,
             "urlImagen" to urlFinal,
             "estadoFisico" to estadoFisico,
+            "latitud" to entregaLocation.latitude,
+            "longitud" to entregaLocation.longitude,
             "estadoPublicacion" to "DISPONIBLE",
             "fechaCreacion" to com.google.firebase.Timestamp.now()
         )

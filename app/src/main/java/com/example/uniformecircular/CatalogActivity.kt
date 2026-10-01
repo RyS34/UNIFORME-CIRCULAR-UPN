@@ -28,6 +28,10 @@ import com.google.firebase.firestore.Query
 
 import android.view.animation.AnimationUtils
 import com.bumptech.glide.Glide
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
 class CatalogActivity : AppCompatActivity() {
 
@@ -325,7 +329,7 @@ class CatalogActivity : AppCompatActivity() {
             dialog.dismiss()
         }
         
-        // Cargar imagen en el detalle de forma dinámica
+        // Cargar imagen en el detalle de forma dinámica usando el mismo método robusto que showFullImage
         val imageUriString = prenda.imagenUri
         if (!imageUriString.isNullOrEmpty()) {
             when {
@@ -336,11 +340,11 @@ class CatalogActivity : AppCompatActivity() {
                         val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         ivImage.setImageBitmap(decodedImage)
                     } catch (e: Exception) {
-                        ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                        ivImage.setImageResource(R.drawable.logo_original)
                     }
                 }
                 imageUriString.startsWith("http") -> {
-                    Glide.with(this).load(imageUriString).into(ivImage)
+                    com.bumptech.glide.Glide.with(this).load(imageUriString).into(ivImage)
                 }
                 imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
                     ivImage.setImageURI(android.net.Uri.parse(imageUriString))
@@ -355,11 +359,56 @@ class CatalogActivity : AppCompatActivity() {
                         else -> resources.getIdentifier(imageName, "drawable", packageName)
                     }
                     if (resId != 0) ivImage.setImageResource(resId)
-                    else ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                    else ivImage.setImageResource(R.drawable.logo_original)
                 }
             }
         } else {
-            ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            ivImage.setImageResource(R.drawable.logo_original)
+        }
+
+        // --- LÓGICA DEL MAPA DE ENTREGA ---
+        val layoutLocation = view.findViewById<View>(R.id.layoutLocation)
+        val btnViewLocation = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewLocation)
+        val mapView = view.findViewById<com.google.android.gms.maps.MapView>(R.id.mapViewDetail)
+
+        // Si no hay coordenadas, usamos la UPN Breña por defecto para que el botón sea visible
+        val lat = prenda.latitud ?: -12.05848
+        val lng = prenda.longitud ?: -77.05873
+        val ubica = com.google.android.gms.maps.model.LatLng(lat, lng)
+
+        // El botón ahora siempre será visible para que puedas comprobar su funcionamiento
+        btnViewLocation.visibility = View.VISIBLE
+        
+        // Configurar el botón para mostrar el mapa y hacer scroll
+        btnViewLocation.setOnClickListener {
+            layoutLocation.visibility = View.VISIBLE
+            btnViewLocation.visibility = View.GONE 
+            
+            mapView.onCreate(null)
+            mapView.onResume()
+            mapView.getMapAsync { googleMap ->
+                googleMap.clear()
+                googleMap.addMarker(com.google.android.gms.maps.model.MarkerOptions().position(ubica).title("Punto de entrega"))
+                googleMap.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(ubica, 15f))
+                googleMap.uiSettings.isMapToolbarEnabled = false
+                googleMap.uiSettings.setAllGesturesEnabled(false)
+            }
+            
+            view.findViewById<androidx.core.widget.NestedScrollView>(R.id.nestedScrollView)?.post {
+                view.findViewById<androidx.core.widget.NestedScrollView>(R.id.nestedScrollView)
+                    .smoothScrollTo(0, layoutLocation.top)
+            }
+        }
+        
+        view.findViewById<View>(R.id.mapOverlay).setOnClickListener {
+            val gmmIntentUri = android.net.Uri.parse("geo:$lat,$lng?q=$lat,$lng(Punto de Entrega)")
+            val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            try {
+                startActivity(mapIntent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Google Maps no está instalado", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Permitir ver la imagen en grande al hacer clic
@@ -700,7 +749,9 @@ class CatalogActivity : AppCompatActivity() {
                         estado = document.getString("estadoPublicacion") ?: "DISPONIBLE",
                         idReceptor = document.getString("receptorId"),
                         estadoFisico = document.getString("estadoFisico") ?: "Usado",
-                        observacion = document.getString("observacion")
+                        observacion = document.getString("observacion"),
+                        latitud = document.getDouble("latitud"),
+                        longitud = document.getDouble("longitud")
                     )
 
                     val isAdmin = currentRol == "ADMIN"

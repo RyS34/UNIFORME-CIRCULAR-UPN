@@ -479,18 +479,35 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-                <!-- Controles de Tipo de Mapa -->
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/fabMapType"
+                <!-- Controles de Mapa -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="top|end"
                     android:layout_margin="12dp"
-                    app:fabSize="mini"
-                    app:srcCompat="@android:drawable/ic_menu_mapmode"
-                    app:backgroundTint="@color/white"
-                    app:tint="@color/brand_blue"
-                    android:contentDescription="Cambiar tipo de mapa"/>
+                    android:orientation="vertical">
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/fabMapType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:fabSize="mini"
+                        app:srcCompat="@android:drawable/ic_menu_mapmode"
+                        app:backgroundTint="@color/white"
+                        app:tint="@color/brand_blue"
+                        android:contentDescription="Cambiar tipo de mapa"/>
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/fabExpandMap"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:fabSize="mini"
+                        app:srcCompat="@android:drawable/ic_menu_search"
+                        app:backgroundTint="@color/white"
+                        app:tint="@color/brand_blue"
+                        android:contentDescription="Expandir mapa"/>
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Botón Publicar Principal Premium -->

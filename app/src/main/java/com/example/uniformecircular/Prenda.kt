@@ -14,5 +14,7 @@ data class Prenda(
     val estado: String = "DISPONIBLE",
     val idReceptor: String? = null,
     val estadoFisico: String = "Usado",
-    val observacion: String? = null
+    val observacion: String? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null
 )
