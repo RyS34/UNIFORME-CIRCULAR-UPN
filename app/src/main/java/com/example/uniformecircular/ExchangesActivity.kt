@@ -30,12 +30,14 @@ import com.bumptech.glide.Glide
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.uniformecircular.R
 
 class ExchangesActivity : AppCompatActivity() {
 
@@ -389,7 +391,7 @@ class ExchangesActivity : AppCompatActivity() {
 
             mapView.onCreate(null)
             mapView.onResume()
-            mapView.getMapAsync { googleMap ->
+            mapView.getMapAsync { googleMap: GoogleMap ->
                 googleMap.clear()
                 googleMap.addMarker(MarkerOptions().position(ubica).title("Punto de entrega"))
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ubica, 15f))
