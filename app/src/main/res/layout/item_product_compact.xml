@@ -6,8 +6,8 @@
     android:layout_marginHorizontal="4dp"
     android:layout_marginVertical="4dp"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="2dp">
+    app:cardCornerRadius="16dp"
+    app:cardElevation="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,18 +16,14 @@
         android:orientation="horizontal"
         android:padding="8dp">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivProductImage"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="0dp">
-            <ImageView
-                android:id="@+id/ivProductImage"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_gallery" />
-        </androidx.cardview.widget.CardView>
+            android:scaleType="centerCrop"
+            android:background="@color/slate_100"
+            android:src="@android:drawable/ic_menu_gallery"
+            app:shapeAppearanceOverlay="@style/RoundedImage" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -61,19 +57,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:background="@drawable/bg_points_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
             android:text="50 pts"
             android:textColor="@color/brand_blue"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textStyle="bold" />
 
-        <!-- Mantenemos el ID btnAdd por compatibilidad con el Adapter, aunque lo ocultamos visualmente si no es necesario o lo dejamos pequeño -->
+        <!-- ID btnAdd necesario para el Adapter -->
         <ImageButton
             android:id="@+id/btnAdd"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_marginStart="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_input_add"
+            android:src="@drawable/ic_info_circle"
             app:tint="@color/brand_blue"
             android:visibility="gone" />
 

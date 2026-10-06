@@ -6,12 +6,26 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import android.net.Uri
+import android.util.Base64
+import android.graphics.BitmapFactory
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
+import android.content.Intent
+import android.view.inputmethod.InputMethodManager
+import android.app.Dialog
+import android.util.TypedValue
+import androidx.core.widget.NestedScrollView
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Lifecycle
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -20,16 +34,16 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-
+import com.example.uniformecircular.R
 import android.view.animation.AnimationUtils
 import com.bumptech.glide.Glide
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 
@@ -122,8 +136,8 @@ class CatalogActivity : AppCompatActivity() {
         } else if (intent.getBooleanExtra("FOCUS_SEARCH", false)) {
             val etSearch = findViewById<EditText>(R.id.etSearch)
             etSearch.requestFocus()
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-            imm.showSoftInput(etSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(etSearch, InputMethodManager.SHOW_IMPLICIT)
         }
     }
 
@@ -153,7 +167,7 @@ class CatalogActivity : AppCompatActivity() {
             dialog.setContentView(view)
             
             // Forzar que el diálogo se abra completo (Expandido)
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
             dialog.behavior.skipCollapsed = true
 
             dialog.show()
@@ -256,12 +270,12 @@ class CatalogActivity : AppCompatActivity() {
                     val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
                     val btnConfirm = dialogView.findViewById<Button>(R.id.btnConfirm)
 
-                    etMotivo.addTextChangedListener(object : android.text.TextWatcher {
+                    etMotivo.addTextChangedListener(object : TextWatcher {
                         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                             tilMotivo.error = null
                         }
-                        override fun afterTextChanged(s: android.text.Editable?) {}
+                        override fun afterTextChanged(s: Editable?) {}
                     })
 
                     btnCancel.setOnClickListener { customDialog.dismiss() }
@@ -336,18 +350,18 @@ class CatalogActivity : AppCompatActivity() {
                 imageUriString.startsWith("base64:") -> {
                     try {
                         val base64String = imageUriString.substring(7)
-                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
-                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                        val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         ivImage.setImageBitmap(decodedImage)
                     } catch (e: Exception) {
                         ivImage.setImageResource(R.drawable.logo_original)
                     }
                 }
                 imageUriString.startsWith("http") -> {
-                    com.bumptech.glide.Glide.with(this).load(imageUriString).into(ivImage)
+                    Glide.with(this).load(imageUriString).into(ivImage)
                 }
                 imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
-                    ivImage.setImageURI(android.net.Uri.parse(imageUriString))
+                    ivImage.setImageURI(Uri.parse(imageUriString))
                 }
                 else -> {
                     val imageName = imageUriString.trim().lowercase()
@@ -368,16 +382,32 @@ class CatalogActivity : AppCompatActivity() {
 
         // --- LÓGICA DEL MAPA DE ENTREGA ---
         val layoutLocation = view.findViewById<View>(R.id.layoutLocation)
-        val btnViewLocation = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewLocation)
+        val btnViewLocation = view.findViewById<MaterialButton>(R.id.btnViewLocation)
         val mapView = view.findViewById<com.google.android.gms.maps.MapView>(R.id.mapViewDetail)
 
         // Si no hay coordenadas, usamos la UPN Breña por defecto para que el botón sea visible
         val lat = prenda.latitud ?: -12.05848
         val lng = prenda.longitud ?: -77.05873
-        val ubica = com.google.android.gms.maps.model.LatLng(lat, lng)
+        val ubica = LatLng(lat, lng)
 
         // El botón ahora siempre será visible para que puedas comprobar su funcionamiento
         btnViewLocation.visibility = View.VISIBLE
+
+        // Gestionar el ciclo de vida del mapa manualmente para evitar que quede en blanco al volver de Maps
+        val mapLifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> if (layoutLocation.visibility == View.VISIBLE) mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> {}
+            }
+        }
+        lifecycle.addObserver(mapLifecycleObserver)
+        dialog.setOnDismissListener {
+            lifecycle.removeObserver(mapLifecycleObserver)
+        }
         
         // Configurar el botón para mostrar el mapa y hacer scroll
         btnViewLocation.setOnClickListener {
@@ -388,21 +418,21 @@ class CatalogActivity : AppCompatActivity() {
             mapView.onResume()
             mapView.getMapAsync { googleMap ->
                 googleMap.clear()
-                googleMap.addMarker(com.google.android.gms.maps.model.MarkerOptions().position(ubica).title("Punto de entrega"))
-                googleMap.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(ubica, 15f))
+                googleMap.addMarker(MarkerOptions().position(ubica).title("Punto de entrega"))
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ubica, 15f))
                 googleMap.uiSettings.isMapToolbarEnabled = false
                 googleMap.uiSettings.setAllGesturesEnabled(false)
             }
             
-            view.findViewById<androidx.core.widget.NestedScrollView>(R.id.nestedScrollView)?.post {
-                view.findViewById<androidx.core.widget.NestedScrollView>(R.id.nestedScrollView)
+            view.findViewById<NestedScrollView>(R.id.nestedScrollView)?.post {
+                view.findViewById<NestedScrollView>(R.id.nestedScrollView)
                     .smoothScrollTo(0, layoutLocation.top)
             }
         }
         
         view.findViewById<View>(R.id.mapOverlay).setOnClickListener {
-            val gmmIntentUri = android.net.Uri.parse("geo:$lat,$lng?q=$lat,$lng(Punto de Entrega)")
-            val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+            val gmmIntentUri = Uri.parse("geo:$lat,$lng?q=$lat,$lng(Punto de Entrega)")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
             mapIntent.setPackage("com.google.android.apps.maps")
             try {
                 startActivity(mapIntent)
@@ -418,13 +448,18 @@ class CatalogActivity : AppCompatActivity() {
 
         dialog.setContentView(view)
 
-        // Configurar el comportamiento del BottomSheet para que se expanda por completo al abrirse
-        val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        bottomSheet?.let {
-            val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(it)
-            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-            behavior.skipCollapsed = true
+        // Configurar el comportamiento del BottomSheet para que se abra en TODA LA PANTALLA inmediatamente
+        dialog.behavior.apply {
+            state = BottomSheetBehavior.STATE_EXPANDED
+            skipCollapsed = true
+            isHideable = true
+            isFitToContents = true // Se ajusta al contenido (sin espacios blancos)
+            peekHeight = resources.displayMetrics.heightPixels
         }
+
+        val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT // Cambiado a WRAP_CONTENT para fluidez
+        bottomSheet?.requestLayout()
 
         // Botón de contacto consolidado
         btnContact.setOnClickListener {
@@ -436,7 +471,7 @@ class CatalogActivity : AppCompatActivity() {
 
             // CASO 1: Es el dueño -> Redirigir a edición
             if (isOwner) {
-                val intent = android.content.Intent(this, DeliverActivity::class.java)
+                val intent = Intent(this, DeliverActivity::class.java)
                 intent.putExtra("EDIT_PRENDA_ID", prenda.id)
                 startActivity(intent)
                 dialog.dismiss()
@@ -486,30 +521,43 @@ class CatalogActivity : AppCompatActivity() {
                                         return@addOnSuccessListener
                                     }
 
-                                    // Transacción de Reserva
+                                    // Transacción de Reserva Robusta
                                     val reserveMsg = getString(R.string.contact_message_template, prenda.titulo)
-                                    val batch = firestore.batch()
-                                    
-                                    val prendaRef = firestore.collection("prendas").document(prenda.id)
-                                    batch.update(prendaRef, mapOf(
-                                        "estadoPublicacion" to "EN PROCESO",
-                                        "receptorId" to uid
-                                    ))
-
                                     val userRef = firestore.collection("usuarios").document(uid)
-                                    batch.update(userRef, "puntos", puntosUsuario - prenda.puntos)
+                                    val prendaRef = firestore.collection("prendas").document(prenda.id)
 
-                                    batch.commit()
-                                        .addOnSuccessListener {
-                                            abrirWhatsApp(telefono, reserveMsg)
-                                            loadProducts()
-                                            dialog.dismiss()
+                                    firestore.runTransaction { transaction ->
+                                        // LEER DATOS ACTUALES
+                                        val userDoc = transaction.get(userRef)
+                                        val prendaDoc = transaction.get(prendaRef)
+                                        
+                                        val puntosActuales = userDoc.getLong("puntos") ?: 0
+                                        val estadoActual = prendaDoc.getString("estadoPublicacion") ?: "DISPONIBLE"
+
+                                        if (puntosActuales < prenda.puntos) {
+                                            throw Exception("Puntos insuficientes (${prenda.puntos} req.)")
                                         }
-                                        .addOnFailureListener { e ->
-                                            btnContact.isEnabled = true
-                                            btnContact.text = originalText
-                                            Toast.makeText(this, "Fallo al reservar: ${e.message}", Toast.LENGTH_LONG).show()
+                                        
+                                        if (estadoActual != "DISPONIBLE") {
+                                            throw Exception("Esta prenda ya no está disponible.")
                                         }
+
+                                        // ACTUALIZAR
+                                        transaction.update(prendaRef, mapOf(
+                                            "estadoPublicacion" to "EN PROCESO",
+                                            "receptorId" to uid
+                                        ))
+                                        transaction.update(userRef, "puntos", puntosActuales - prenda.puntos)
+                                        null
+                                    }.addOnSuccessListener {
+                                        abrirWhatsApp(telefono, reserveMsg)
+                                        loadProducts()
+                                        dialog.dismiss()
+                                    }.addOnFailureListener { e ->
+                                        btnContact.isEnabled = true
+                                        btnContact.text = originalText
+                                        Toast.makeText(this, "Fallo al reservar: ${e.message}", Toast.LENGTH_LONG).show()
+                                    }
                                 }
                         }
                     } else {
@@ -530,13 +578,13 @@ class CatalogActivity : AppCompatActivity() {
 
     // Función auxiliar para abrir WhatsApp de forma segura
     private fun abrirWhatsApp(telefono: String, mensaje: String) {
-        val whatsappUriUri = android.net.Uri.parse("whatsapp://send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}")
-        val intentNative = android.content.Intent(android.content.Intent.ACTION_VIEW, whatsappUriUri)
+        val whatsappUriUri = Uri.parse("whatsapp://send?phone=51$telefono&text=${Uri.encode(mensaje)}")
+        val intentNative = Intent(Intent.ACTION_VIEW, whatsappUriUri)
         try {
             startActivity(intentNative)
         } catch (eNative: Exception) {
-            val webUrl = "https://api.whatsapp.com/send?phone=51$telefono&text=${android.net.Uri.encode(mensaje)}"
-            val intentWeb = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(webUrl))
+            val webUrl = "https://api.whatsapp.com/send?phone=51$telefono&text=${Uri.encode(mensaje)}"
+            val intentWeb = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
             try {
                 startActivity(intentWeb)
             } catch (eWeb: Exception) {
@@ -548,7 +596,7 @@ class CatalogActivity : AppCompatActivity() {
     // Muestra la imagen de la prenda a pantalla completa con soporte de gestos de zoom (Pinch-to-Zoom y arrastre)
     @SuppressLint("DiscouragedApi", "ClickableViewAccessibility")
     private fun showFullImage(prenda: Prenda) {
-        val fullImageDialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val fullImageDialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         fullImageDialog.setContentView(R.layout.dialog_full_image)
         
         val ivFull = fullImageDialog.findViewById<ImageView>(R.id.ivFullImage)
@@ -561,8 +609,8 @@ class CatalogActivity : AppCompatActivity() {
                 imageUriString.startsWith("base64:") -> {
                     try {
                         val base64String = imageUriString.substring(7)
-                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
-                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                        val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         ivFull.setImageBitmap(decodedImage)
                     } catch (e: Exception) {
                         ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
@@ -572,7 +620,7 @@ class CatalogActivity : AppCompatActivity() {
                     Glide.with(this).load(imageUriString).into(ivFull)
                 }
                 imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
-                    ivFull.setImageURI(android.net.Uri.parse(imageUriString))
+                    ivFull.setImageURI(Uri.parse(imageUriString))
                 }
                 else -> {
                     val imageName = imageUriString.trim().lowercase()
@@ -593,8 +641,8 @@ class CatalogActivity : AppCompatActivity() {
 
         // Implementación nativa de Gesto Pinch-to-Zoom y Arrastre sin librerías externas
         var scaleFactor = 1.0f
-        val scaleGestureDetector = android.view.ScaleGestureDetector(this, object : android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScale(detector: android.view.ScaleGestureDetector): Boolean {
+        val scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
                 scaleFactor *= detector.scaleFactor
                 scaleFactor = scaleFactor.coerceIn(1.0f, 5.0f) // Límite de zoom entre 1x y 5x
                 ivFull.scaleX = scaleFactor
@@ -612,11 +660,11 @@ class CatalogActivity : AppCompatActivity() {
             scaleGestureDetector.onTouchEvent(event)
             
             when (event.action) {
-                android.view.MotionEvent.ACTION_DOWN -> {
+                MotionEvent.ACTION_DOWN -> {
                     lastTouchX = event.rawX
                     lastTouchY = event.rawY
                 }
-                android.view.MotionEvent.ACTION_MOVE -> {
+                MotionEvent.ACTION_MOVE -> {
                     if (scaleFactor > 1.0f) { // Solo permitir arrastrar si hay zoom aplicado
                         val deltaX = event.rawX - lastTouchX
                         val deltaY = event.rawY - lastTouchY
@@ -631,7 +679,7 @@ class CatalogActivity : AppCompatActivity() {
                         lastTouchY = event.rawY
                     }
                 }
-                android.view.MotionEvent.ACTION_UP -> {
+                MotionEvent.ACTION_UP -> {
                     // Si se remueve el zoom, resetear la posición centrada suavemente
                     if (scaleFactor <= 1.0f) {
                         posX = 0f
@@ -666,10 +714,10 @@ class CatalogActivity : AppCompatActivity() {
             chip.id = View.generateViewId()
             chip.setChipBackgroundColorResource(R.color.chip_background_selector)
             chip.setChipStrokeColorResource(R.color.chip_stroke_selector)
-            chip.chipStrokeWidth = android.util.TypedValue.applyDimension(
-                android.util.TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
+            chip.chipStrokeWidth = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
             )
-            chip.setTextColor(androidx.core.content.ContextCompat.getColorStateList(this, R.color.chip_text_selector))
+            chip.setTextColor(ContextCompat.getColorStateList(this, R.color.chip_text_selector))
             if (carrera == selectedCarrera) {
                 chip.isChecked = true
             }
@@ -683,10 +731,10 @@ class CatalogActivity : AppCompatActivity() {
             chip.id = View.generateViewId()
             chip.setChipBackgroundColorResource(R.color.chip_background_selector)
             chip.setChipStrokeColorResource(R.color.chip_stroke_selector)
-            chip.chipStrokeWidth = android.util.TypedValue.applyDimension(
-                android.util.TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
+            chip.chipStrokeWidth = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
             )
-            chip.setTextColor(androidx.core.content.ContextCompat.getColorStateList(this, R.color.chip_text_selector))
+            chip.setTextColor(ContextCompat.getColorStateList(this, R.color.chip_text_selector))
             if (talla == "Todas") chip.isChecked = true
             cgTallas.addView(chip)
         }
@@ -698,10 +746,10 @@ class CatalogActivity : AppCompatActivity() {
             chip.id = View.generateViewId()
             chip.setChipBackgroundColorResource(R.color.chip_background_selector)
             chip.setChipStrokeColorResource(R.color.chip_stroke_selector)
-            chip.chipStrokeWidth = android.util.TypedValue.applyDimension(
-                android.util.TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
+            chip.chipStrokeWidth = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
             )
-            chip.setTextColor(androidx.core.content.ContextCompat.getColorStateList(this, R.color.chip_text_selector))
+            chip.setTextColor(ContextCompat.getColorStateList(this, R.color.chip_text_selector))
             if (genero == "Todos") chip.isChecked = true
             cgGeneros.addView(chip)
         }
@@ -755,7 +803,13 @@ class CatalogActivity : AppCompatActivity() {
                     )
 
                     val isAdmin = currentRol == "ADMIN"
-                    if (prenda.estado != "OBSERVADA" || isAdmin) {
+                    val isOwner = prenda.idUsuario == currentUserId
+                    
+                    // Mostramos la prenda si:
+                    // 1. Está disponible (para todos)
+                    // 2. El usuario es ADMIN (ve todo excepto quizá lo borrado)
+                    // 3. El usuario es el DUEÑO (ve sus publicaciones en cualquier estado)
+                    if (prenda.estado == "DISPONIBLE" || isAdmin || isOwner) {
                         products.add(prenda)
                     }
                 }
@@ -795,8 +849,17 @@ class CatalogActivity : AppCompatActivity() {
             val matchesCarrera = selectedCarrera == "Todas" || prenda.carrera.equals(selectedCarrera, ignoreCase = true)
             val matchesTalla = selectedTalla == "Todas" || prenda.talla.equals(selectedTalla, ignoreCase = true)
             val matchesGenero = selectedGenero == "Todos" || prenda.genero.equals(selectedGenero, ignoreCase = true)
+            
             val isAdmin = currentRol == "ADMIN"
-            val isVisible = prenda.estado == "DISPONIBLE" || (isAdmin && prenda.estado == "OBSERVADA")
+            val isOwner = prenda.idUsuario == currentUserId
+            
+            // Lógica de visibilidad refinada
+            val isVisible = when (prenda.estado) {
+                "DISPONIBLE" -> true
+                "OBSERVADA" -> isAdmin || isOwner
+                "EN PROCESO" -> isAdmin || isOwner // Solo el admin o el dueño ven lo reservado en el catálogo general
+                else -> isAdmin // Otros estados como 'ENTREGADO' solo para admin
+            }
             
             matchesSearch && matchesCarrera && matchesTalla && matchesGenero && isVisible
         }

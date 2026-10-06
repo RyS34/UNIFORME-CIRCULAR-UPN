@@ -2,8 +2,10 @@ package com.example.uniformecircular
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -24,10 +26,16 @@ import android.widget.Button
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.bumptech.glide.Glide
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.button.MaterialButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ExchangesActivity : AppCompatActivity() {
 
@@ -179,11 +187,21 @@ class ExchangesActivity : AppCompatActivity() {
 
                             // Si todo es correcto, realizamos la entrega de manera atómica
                             firestore.runTransaction { transaction ->
+                                // LEER AMBOS DOCUMENTOS DENTRO DE LA TRANSACCIÓN
+                                val prendaRef = firestore.collection("prendas").document(prendaIdEscaneado)
+                                val prendaDoc = transaction.get(prendaRef)
+                                
                                 val userRef = firestore.collection("usuarios").document(vendedorId)
                                 val userDoc = transaction.get(userRef)
+                                
                                 val puntosActuales = userDoc.getLong("puntos") ?: 0
+                                val estadoActual = prendaDoc.getString("estadoPublicacion") ?: ""
 
-                                transaction.update(doc.reference, "estadoPublicacion", "CANJEADO")
+                                if (estadoActual == "CANJEADO") {
+                                    throw Exception("Esta prenda ya ha sido canjeada.")
+                                }
+
+                                transaction.update(prendaRef, "estadoPublicacion", "CANJEADO")
                                 transaction.update(userRef, "puntos", puntosActuales + puntosPrenda)
                                 null
                             }.addOnSuccessListener {
@@ -340,6 +358,57 @@ class ExchangesActivity : AppCompatActivity() {
         tvType.text = prenda.tipoTransaccion
         tvDescription.text = prenda.descripcion
 
+        // --- LÓGICA DEL MAPA DE ENTREGA EN MIS INTERCAMBIOS ---
+        val btnViewLocation = view.findViewById<MaterialButton>(R.id.btnViewExchangeLocation)
+        val layoutLocation = view.findViewById<View>(R.id.layoutExchangeLocation)
+        val mapView = view.findViewById<com.google.android.gms.maps.MapView>(R.id.mapViewExchangeDetail)
+
+        val lat = prenda.latitud ?: -12.05848
+        val lng = prenda.longitud ?: -77.05873
+        val ubica = LatLng(lat, lng)
+
+        // Gestionar el ciclo de vida del mapa manualmente
+        val mapLifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> if (layoutLocation.visibility == View.VISIBLE) mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> {}
+            }
+        }
+        lifecycle.addObserver(mapLifecycleObserver)
+        dialog.setOnDismissListener {
+            lifecycle.removeObserver(mapLifecycleObserver)
+        }
+
+        btnViewLocation.setOnClickListener {
+            layoutLocation.visibility = View.VISIBLE
+            btnViewLocation.visibility = View.GONE
+
+            mapView.onCreate(null)
+            mapView.onResume()
+            mapView.getMapAsync { googleMap ->
+                googleMap.clear()
+                googleMap.addMarker(MarkerOptions().position(ubica).title("Punto de entrega"))
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ubica, 15f))
+                googleMap.uiSettings.isMapToolbarEnabled = false
+                googleMap.uiSettings.setAllGesturesEnabled(false)
+            }
+        }
+
+        view.findViewById<View>(R.id.mapExchangeOverlay).setOnClickListener {
+            val gmmIntentUri = Uri.parse("geo:$lat,$lng?q=$lat,$lng(Punto de Entrega)")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            try {
+                startActivity(mapIntent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Google Maps no está instalado", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         // Configurar Panel de Observación si aplica
         val layoutObs = view.findViewById<View>(R.id.layoutObservation)
         val tvObsText = view.findViewById<TextView>(R.id.tvObservationText)
@@ -393,8 +462,8 @@ class ExchangesActivity : AppCompatActivity() {
                 imageUriString.startsWith("base64:") -> {
                     try {
                         val base64String = imageUriString.substring(7)
-                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
-                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                        val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         ivImage.setImageBitmap(decodedImage)
                     } catch (e: Exception) {
                         ivImage.setImageResource(android.R.drawable.ic_menu_gallery)
@@ -506,7 +575,9 @@ class ExchangesActivity : AppCompatActivity() {
                         estado = doc.getString("estadoPublicacion") ?: "DISPONIBLE",
                         idReceptor = doc.getString("receptorId"),
                         estadoFisico = doc.getString("estadoFisico") ?: "Usado",
-                        observacion = doc.getString("observacion")
+                        observacion = doc.getString("observacion"),
+                        latitud = doc.getDouble("latitud"),
+                        longitud = doc.getDouble("longitud")
                     )
                 }
 

@@ -19,6 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="130dp"
             android:scaleType="centerCrop"
+            android:background="@color/slate_100"
             android:src="@android:drawable/ic_menu_gallery"
             app:shapeAppearanceOverlay="@style/RoundedImage"
             android:contentDescription="@string/app_name"/>

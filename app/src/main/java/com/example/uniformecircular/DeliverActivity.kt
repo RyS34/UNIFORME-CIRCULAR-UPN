@@ -31,11 +31,20 @@ import java.util.Locale
 
 import com.bumptech.glide.Glide
 
+import android.app.Dialog
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.util.Base64
+import android.view.ViewGroup
+import com.google.android.gms.maps.model.Marker
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
+import com.google.firebase.Timestamp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -50,7 +59,7 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private val upnBrena = LatLng(-12.058481094422284, -77.05873163031838)
     private var entregaLocation: LatLng = upnBrena // Variable para guardar la ubicación elegida
-    private var currentMarker: com.google.android.gms.maps.model.Marker? = null
+    private var currentMarker: Marker? = null
 
     private var currentUserId: String? = null
     private var selectedImageUri: Uri? = null
@@ -177,10 +186,10 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         
-        // Marcador inicial
-        actualizarMarcador(upnBrena)
+        // Marcador inicial (usa entregaLocation que pudo ser actualizada por cargarDatosPrenda)
+        actualizarMarcador(entregaLocation)
         
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(upnBrena, 16f))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(entregaLocation, 16f))
         
         // Habilitar controles básicos
         mMap.uiSettings.isZoomControlsEnabled = true
@@ -226,11 +235,30 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val mapView = dialogView.findViewById<com.google.android.gms.maps.MapView>(R.id.mapViewFull)
         var tempLocation = entregaLocation
-        var tempMarker: com.google.android.gms.maps.model.Marker? = null
+        var tempMarker: Marker? = null
+
+        // Gestionar el ciclo de vida del mapa en el diálogo para evitar que se pierda al cambiar de app
+        val mapLifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> {}
+            }
+        }
+        lifecycle.addObserver(mapLifecycleObserver)
+        dialog.setOnDismissListener {
+            lifecycle.removeObserver(mapLifecycleObserver)
+        }
 
         mapView.onCreate(null)
         mapView.getMapAsync { googleMap ->
             googleMap.uiSettings.isZoomControlsEnabled = true
+            // Heredar el tipo de mapa seleccionado en la vista principal
+            googleMap.mapType = mMap.mapType
+
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(tempLocation, 16f))
             
             tempMarker = googleMap.addMarker(MarkerOptions().position(tempLocation).title("Punto seleccionado"))
@@ -255,7 +283,6 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         dialog.show()
-        mapView.onResume()
     }
 
     // Carga los datos de la prenda a editar desde Firestore
@@ -283,8 +310,8 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
                         if (imagenUrl.startsWith("base64:")) {
                             try {
                                 val base64String = imagenUrl.substring(7)
-                                val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
-                                val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                                val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                                 ivPreview.setImageBitmap(decodedImage)
                                 ivPreview.scaleType = ImageView.ScaleType.CENTER_CROP
                                 ivPreview.post { ivPreview.drawable?.setTintList(null) }
@@ -300,7 +327,7 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
                         }
                         
                         // Guardamos la URI para que la validación sepa que ya hay una imagen
-                        selectedImageUri = android.net.Uri.parse(imagenUrl)
+                        selectedImageUri = Uri.parse(imagenUrl)
                     }
                     
                     // Cargar Chips
@@ -313,6 +340,17 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
                     seleccionarChipPorTexto(findViewById(R.id.cgGenero), genero)
                     seleccionarChipPorTexto(findViewById(R.id.cgTipo), tipo)
                     seleccionarChipPorTexto(findViewById(R.id.cgEstadoFisico), estadoFisico)
+
+                    // Cargar ubicación guardada si existe
+                    val lat = doc.getDouble("latitud")
+                    val lng = doc.getDouble("longitud")
+                    if (lat != null && lng != null) {
+                        entregaLocation = LatLng(lat, lng)
+                        if (::mMap.isInitialized) {
+                            actualizarMarcador(entregaLocation)
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(entregaLocation, 16f))
+                        }
+                    }
 
                     actualizarResumenPuntos()
                 }
@@ -366,7 +404,7 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
     }
     // Muestra la imagen de la prenda a pantalla completa
     private fun showFullImage(uri: Uri) {
-        val fullImageDialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val fullImageDialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val view = layoutInflater.inflate(R.layout.dialog_full_image, null)
         fullImageDialog.setContentView(view)
         
@@ -377,8 +415,8 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
         if (uriString.startsWith("base64:")) {
             try {
                 val base64String = uriString.substring(7)
-                val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
-                val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                 ivFull.setImageBitmap(decodedImage)
             } catch (e: Exception) {
                 ivFull.setImageResource(android.R.drawable.ic_menu_gallery)
@@ -446,19 +484,19 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
         val spinner = findViewById<Spinner>(R.id.spCarrera)
         val carreras = listOf("Ingeniería", "Salud", "Derecho", "Arquitectura", "Negocios", "Comunicaciones")
         val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, carreras) {
-            override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent)
                 if (v is TextView) {
-                    v.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.slate_800))
+                    v.setTextColor(ContextCompat.getColor(context, R.color.slate_800))
                     v.textSize = 15f
                 }
                 return v
             }
-            override fun getDropDownView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getDropDownView(position, convertView, parent)
                 if (v is TextView) {
-                    v.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.slate_800))
-                    v.setBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.white))
+                    v.setTextColor(ContextCompat.getColor(context, R.color.slate_800))
+                    v.setBackgroundColor(ContextCompat.getColor(context, R.color.white))
                 }
                 return v
             }
@@ -583,11 +621,11 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
                 
                 val correctedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
                 
-                val outputStream = java.io.ByteArrayOutputStream()
+                val outputStream = ByteArrayOutputStream()
                 // Comprimimos al 40% para que quepa en Firestore y no use mucha red
                 correctedBitmap.compress(Bitmap.CompressFormat.JPEG, 40, outputStream)
                 val byteArray = outputStream.toByteArray()
-                "base64:" + android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
+                "base64:" + Base64.encodeToString(byteArray, Base64.DEFAULT)
             } catch (e: Exception) {
                 null
             }
@@ -622,7 +660,7 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
             "latitud" to entregaLocation.latitude,
             "longitud" to entregaLocation.longitude,
             "estadoPublicacion" to "DISPONIBLE",
-            "fechaCreacion" to com.google.firebase.Timestamp.now()
+            "fechaCreacion" to Timestamp.now()
         )
 
         // Guardar directamente en Firestore
@@ -650,7 +688,7 @@ class DeliverActivity : AppCompatActivity(), OnMapReadyCallback {
             val inputStream = contentResolver.openInputStream(uri)
             val fileName = "prenda_${System.currentTimeMillis()}.jpg"
             val file = File(filesDir, fileName)
-            val outputStream = java.io.FileOutputStream(file)
+            val outputStream = FileOutputStream(file)
             inputStream?.use { input ->
                 outputStream.use { output ->
                     input.copyTo(output)

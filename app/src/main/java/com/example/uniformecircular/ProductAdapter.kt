@@ -1,5 +1,8 @@
 package com.example.uniformecircular
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -57,8 +60,8 @@ class ProductAdapter(
                 imageUriString.startsWith("base64:") -> {
                     try {
                         val base64String = imageUriString.substring(7)
-                        val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
-                        val decodedImage = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                        val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         holder.ivProductImage.setImageBitmap(decodedImage)
                         holder.ivProductImage.scaleType = ImageView.ScaleType.CENTER_CROP
                     } catch (e: Exception) {
@@ -69,7 +72,7 @@ class ProductAdapter(
                     Glide.with(context).load(imageUriString).into(holder.ivProductImage)
                 }
                 imageUriString.startsWith("content://") || imageUriString.startsWith("file://") -> {
-                    holder.ivProductImage.setImageURI(android.net.Uri.parse(imageUriString))
+                    holder.ivProductImage.setImageURI(Uri.parse(imageUriString))
                 }
                 else -> {
                     val imageName = imageUriString.trim().lowercase()
